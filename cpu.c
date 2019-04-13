@@ -59,13 +59,15 @@ int emulate_6502_op(State6502 * state) {
 	byte* opcode = &state->memory[state->pc++];
 	switch (*opcode) {
 	case 0x00: break; //NOP
-	case 0x01: //ORA, indirect, x
+	case ORA_IND_X: //ORA, indirect, x
 		break;
-	case 0x05: //ORA, zero page
+	case ORA_ZP: //ORA, zero page
 		byte zp = pop_byte(state);
 		ORA(state, state->memory[zp]);
 		break;
-	case 0x09: //ORA
+	case 0x09: //ORA, immediate
+		
+
 	default:
 		unimplemented_instruction(state); break;
 	}
