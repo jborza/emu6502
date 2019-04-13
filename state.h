@@ -4,10 +4,11 @@
 
 typedef struct State6502 {
 	byte a; //accumulator
-	byte X; //x index
-	byte Y; //y index
+	byte x; //x index
+	byte y; //y index
 	byte sp; //stack pointer, 256 byte stack between $0100 and $01FF
 	word pc; //program counter, points to the next instruction to be executed
 	byte* memory;
 	Flags flags; //CPU flags
+	int running;
 } State6502;
