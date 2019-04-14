@@ -390,14 +390,184 @@ void test_ORA_INDY() {
 	test_cleanup(&state);
 }
 
+//// AND
+
+void test_AND_IMM() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_IMM, 0xA0 }; //AND #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	test_cleanup(&state);
+}
+
+void test_AND_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_ZP, 0x03, 0x00, 0xA0 }; //AND $3
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_ZPX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x01;
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_ZPX, 0x02, 0x00, 0xA0 }; //AND $2,x
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_ABS, 0x01, 0x04 }; //AND $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x02;
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_ABSX, 0x01, 0x04 }; //AND $0401,x
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_ABSY, 0x01, 0x04 }; //AND $0401,y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_INDX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x05;
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_INDX, 0x3E }; //AND ($3E, x)
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0043] = 0xA9;
+	state.memory[0x0044] = 0x04;
+	state.memory[0x04A9] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_INDY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x05;
+	state.a = 0xAA;
+
+	//arrange
+	char program[] = { AND_INDY, 0x3E, 0x04, 0xAA }; //AND ($3E),y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x3E] = 0xA0; //0x04A0
+	state.memory[0x3F] = 0x04;
+	state.memory[0x04A5] = 0xA0; //address 0x04A0 + 0x05 = 0x04A5
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 typedef void fp();
 fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY};
+fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
 
 void run_tests() {
 	for(int i = 0; i < sizeof(tests_lda)/sizeof(fp*); i++)
 		tests_lda[i]();
 	for (int i = 0; i < sizeof(tests_ora) / sizeof(fp*); i++)
 		tests_ora[i]();
+	for (int i = 0; i < sizeof(tests_and) / sizeof(fp*); i++)
+		tests_and[i]();
 }

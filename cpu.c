@@ -39,19 +39,26 @@ byte pop_byte(State6502* state) {
 }
 
 //bitwise or with accumulator
-void ORA(State6502 * state, byte operand) {
+void ORA(State6502* state, byte operand) {
 	byte result = state->a | operand;
 	set_NV_flags(state, result);
 	state->a = result;
 }
 
+//bitwise and with accumulator
+void AND(State6502* state, byte operand) {
+	byte result = state->a & operand;
+	set_NV_flags(state, result);
+	state->a = result;
+}
+
 //load accumulator
-void LDA(State6502 * state, byte operand) {
+void LDA(State6502* state, byte operand) {
 	state->a = operand;
 	set_NV_flags(state, state->a);
 }
 
-word pop_word(State6502 * state) {
+word pop_word(State6502* state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
 	word result = (high << 8) | low;
@@ -62,12 +69,40 @@ word read_word(State6502 * state, word address) {
 	return state->memory[address] | state->memory[address + 1] << 8;
 }
 
+byte get_byte_zero_page(State6502 * state) {
+	byte address = pop_byte(state);
+	return state->memory[address];
+}
+
+byte get_byte_zero_page_x(State6502 * state) {
+	byte address = pop_byte(state) + state->x;
+	return state->memory[address];
+}
+
+byte get_byte_zero_page_y(State6502 * state) {
+	byte address = pop_byte(state) + state->y;
+	return state->memory[address];
+}
+
+byte get_byte_absolute(State6502 * state)
+{
+	word address = pop_word(state);
+	return state->memory[address];
+}
+
+byte get_byte_absolute_x(State6502 * state) {
+	word address = pop_word(state) + state->x;
+	return state->memory[address];
+}
+
+byte get_byte_absolute_y(State6502 * state) {
+	word address = pop_word(state) + state->y;
+	return state->memory[address];
+}
+
 int emulate_6502_op(State6502 * state) {
 	byte* opcode = &state->memory[state->pc++];
 	switch (*opcode) {
-	
-	
-
 	case ADC_IMM: unimplemented_instruction(state); break;
 	case ADC_ZP: unimplemented_instruction(state); break;
 	case ADC_ZPX: unimplemented_instruction(state); break;
@@ -76,12 +111,12 @@ int emulate_6502_op(State6502 * state) {
 	case ADC_ABSY: unimplemented_instruction(state); break;
 	case ADC_INDX: unimplemented_instruction(state); break;
 	case ADC_INDY: unimplemented_instruction(state); break;
-	case AND_IMM: unimplemented_instruction(state); break;
-	case AND_ZP: unimplemented_instruction(state); break;
-	case AND_ZPX: unimplemented_instruction(state); break;
-	case AND_ABS: unimplemented_instruction(state); break;
-	case AND_ABSX: unimplemented_instruction(state); break;
-	case AND_ABSY: unimplemented_instruction(state); break;
+	case AND_IMM: AND(state, pop_byte(state)); break;
+	case AND_ZP: AND(state, get_byte_zero_page(state)); break;
+	case AND_ZPX: AND(state, get_byte_zero_page_x(state)); break;
+	case AND_ABS: AND(state, get_byte_absolute(state)); break;
+	case AND_ABSX: AND(state, get_byte_absolute_x(state)); break;
+	case AND_ABSY: AND(state, get_byte_absolute_y(state)); break;
 	case AND_INDX: unimplemented_instruction(state); break;
 	case AND_INDY: unimplemented_instruction(state); break;
 	case ASL_ACC: unimplemented_instruction(state); break;
@@ -159,41 +194,12 @@ int emulate_6502_op(State6502 * state) {
 	case JMP_ABS: unimplemented_instruction(state); break;
 	case JMP_IND: unimplemented_instruction(state); break;
 	case JSR_ABS: unimplemented_instruction(state); break;
-	case LDA_IMM:
-	{
-		LDA(state, pop_byte(state));
-		break;
-	}
-	case LDA_ZP:
-	{
-		byte address = pop_byte(state);
-		LDA(state, state->memory[address]);
-		break;
-	}
-	case LDA_ZPX:
-	{
-		byte address = pop_byte(state) + state->x;
-		LDA(state, state->memory[address]);
-		break;
-	}
-	case LDA_ABS:
-	{
-		word address = pop_word(state);
-		LDA(state, state->memory[address]);
-		break;
-	}
-	case LDA_ABSX:
-	{
-		word address = pop_word(state) + state->x;
-		LDA(state, state->memory[address]);
-		break;
-	}
-	case LDA_ABSY:
-	{
-		word address = pop_word(state) + state->y;
-		LDA(state, state->memory[address]);
-		break;
-	}
+	case LDA_IMM: LDA(state, pop_byte(state)); break;
+	case LDA_ZP: LDA(state, get_byte_zero_page(state));	break;
+	case LDA_ZPX: LDA(state, get_byte_zero_page_x(state)); break;
+	case LDA_ABS: LDA(state, get_byte_absolute(state)); break;
+	case LDA_ABSX: LDA(state, get_byte_absolute_x(state)); break;
+	case LDA_ABSY: LDA(state, get_byte_absolute_y(state)); break;
 	case LDA_INDX:
 	{
 		//pre-indexed indirect
@@ -229,39 +235,12 @@ int emulate_6502_op(State6502 * state) {
 	case LSR_ZPX: unimplemented_instruction(state); break;
 	case LSR_ABS: unimplemented_instruction(state); break;
 	case LSR_ABSX: unimplemented_instruction(state); break;
-	case ORA_IMM:
-		ORA(state, pop_byte(state));
-	break;
-	case ORA_ZP: //ORA, zero page
-	{
-		byte address = pop_byte(state);
-		ORA(state, state->memory[address]);
-		break;
-	}
-	case ORA_ZPX:
-	{
-		byte address = pop_byte(state) + state->x;
-		ORA(state, state->memory[address]);
-		break;
-	}
-	case ORA_ABS:
-	{
-		word address = pop_word(state);
-		ORA(state, state->memory[address]);
-		break;
-	}
-	case ORA_ABSX:
-	{
-		word address = pop_word(state) + state->x;
-		ORA(state, state->memory[address]);
-		break;
-	}
-	case ORA_ABSY:
-	{
-		word address = pop_word(state) + state->y;
-		ORA(state, state->memory[address]);
-		break;
-	}
+	case ORA_IMM: ORA(state, pop_byte(state)); break;
+	case ORA_ZP: ORA(state, get_byte_zero_page(state));	break;
+	case ORA_ZPX: ORA(state, get_byte_zero_page_x(state)); break;
+	case ORA_ABS: ORA(state, get_byte_absolute(state)); break;
+	case ORA_ABSX: ORA(state, get_byte_absolute_x(state)); break;
+	case ORA_ABSY: ORA(state, get_byte_absolute_y(state)); break;
 	case ORA_INDX: //ORA, indirect, x
 	{
 		//pre-indexed indirect
@@ -319,3 +298,4 @@ int emulate_6502_op(State6502 * state) {
 	}
 	return 0;
 }
+
