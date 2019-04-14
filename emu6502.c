@@ -19,7 +19,7 @@ byte* read_game() {
 }
 
 int main()
-{
+{ 
 	run_tests();
 	printf("All tests succeeded.\n");
 	return 0;
