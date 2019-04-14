@@ -11,13 +11,13 @@
 
 void print_state(State6502* state) {
 	printf("\tC=%d,Z=%d,I=%d,D=%d,B=%d,V=%d,N=%d\n", state->flags.c, state->flags.z, state->flags.i, state->flags.d, state->flags.b, state->flags.v, state->flags.n);
-	printf("\tA $%02x X $%02x Y $%02x SP $%02x PC $%04x\n", state->a, state->x, state->y, state->sp, state->pc);
+	printf("\tA $%02X X $%02X Y $%02X SP $%02X PC $%04X\n", state->a, state->x, state->y, state->sp, state->pc);
 }
 
 void print_memory(State6502* state, word offset) {
-	printf("$%04x: ", offset);
+	printf("$%04X: ", offset);
 	for (byte i = 0; i < 32; i++) {
-		printf("%02x", state->memory[offset + i]);
+		printf("%02X", state->memory[offset + i]);
 		if (i % 8 == 7)
 			printf("|");
 		else
@@ -83,6 +83,20 @@ void assert_memory(State6502* state, word address, byte expected) {
 	}
 }
 
+void assert_flag_n(State6502* state, byte expected) {
+	if (state->flags.n != expected) {
+		printf("Unexpected value in flag N, expected %d, was %d", expected, state->flags.n);
+		exit(1);
+	}
+}
+
+void assert_flag_z(State6502* state, byte expected) {
+	if (state->flags.z != expected) {
+		printf("Unexpected value in flag N, expected %d, was %d", expected, state->flags.z);
+		exit(1);
+	}
+}
+
 ////////////////////////////////////////
 
 
@@ -136,6 +150,26 @@ void test_LDA_ZPX() {
 	test_step(&state);
 
 	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDA_ZPX_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0xFF;
+
+	//arrange
+	char program[] = { LDA_ZPX, 0x04, 0x00, 0xAA }; //LDA $04,X
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	//should wrap $FF+$04 around to $03
 	assertA(&state, 0xAA);
 
 	//cleanup
@@ -889,16 +923,158 @@ void test_STY_ABS() {
 	test_cleanup(&state);
 }
 
+// INX, INY, DEX, DEY
+
+void test_DEX_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { DEX };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertX(&state, 0xFF);
+	assert_flag_n(&state, 1);
+	assert_flag_z(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_DEX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0xE1;
+
+	//arrange
+	char program[] = { DEX };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertX(&state, 0xE0);
+	assert_flag_n(&state, 1);
+	assert_flag_z(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_DEY_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { DEY };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertY(&state, 0xFF);
+	assert_flag_n(&state, 1);
+	assert_flag_z(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_DEY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0xE1;
+
+	//arrange
+	char program[] = { DEY };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertY(&state, 0xE0);
+	assert_flag_n(&state, 1);
+	assert_flag_z(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_INX_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0xFF;
+
+	//arrange
+	char program[] = { INX };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertX(&state, 0x00);
+	assert_flag_z(&state, 1);
+	assert_flag_n(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_INX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0xE1;
+
+	//arrange
+	char program[] = { INX };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertX(&state, 0xE2);
+
+	test_cleanup(&state);
+}
+
+void test_INY_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0xFF;
+
+	//arrange
+	char program[] = { INY };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertY(&state, 0x00);
+	assert_flag_z(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_INY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0xE1;
+
+	//arrange
+	char program[] = { INY };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertY(&state, 0xE2);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
-fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
+fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY};
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
 fp* tests_ldx[] = { test_LDX_IMM, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
 fp* tests_ldy[] = { test_LDY_IMM, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_LDY_ABSX };
 fp* tests_stx[] = { test_STX_ZP, test_STX_ZPY, test_STX_ABS};
 fp* tests_sty[] = { test_STY_ZP, test_STY_ZPX, test_STY_ABS };
+fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DEY_wraparound, test_INX, test_INX_wraparound, test_INY, test_INY_wraparound};
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -916,4 +1092,5 @@ void run_tests() {
 	RUN(tests_ldy);
 	RUN(tests_stx);
 	RUN(tests_sty);
+	RUN(tests_inx_iny_dex_dey);
 }
