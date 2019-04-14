@@ -57,3 +57,4 @@ dkms.conf
 /Release
 /emu6502.vcxproj.user
 /emu6502.vcxproj.filters
+/data/.vscode/ipch

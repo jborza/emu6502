@@ -70,12 +70,12 @@ int emulate_6502_op(State6502 * state) {
 		break; //BRK
 	case NOP: break; //NOP
 	case ORA_INDX: //ORA, indirect, x
-		//The address to be accessed by an instruction using X register indexed absolute addressing is computed by taking the 16 bit address 
-		//from the instruction and added the contents of the X register. 
-		//For example if X contains $92 then an STA $2000,X instruction will store the accumulator at $2092 (e.g. $2000 + $92). (STA)
 	{
-		word address_indirect = pop_word(state) + state->x;
-		word address = read_word(state, address_indirect);
+		//pre-indexed indirect
+		//zero-page address is added to x register
+		byte indirect_address = pop_byte(state) + state->x;
+		//pointing to address of a word holding the address of the operand
+		word address = read_word(state, indirect_address);
 		ORA(state, state->memory[address]);
 		break;
 	}
@@ -87,10 +87,12 @@ int emulate_6502_op(State6502 * state) {
 	}
 	case ORA_INDY: //ORA, indirect, y (post_indexed)
 	{
-		word address_indirect = pop_word(state);
-		word address = read_word(state, address_indirect) + state->y;
+		//post-indexed indirect
+		//zero-page address as an argument
+		byte indirect_address = pop_byte(state);
+		//the address and the following byte is read as a word, adding Y register
+		word address = read_word(state, indirect_address) + state->y;
 		ORA(state, state->memory[address]);
-		unimplemented_instruction(state);
 		break;
 	}
 	case ORA_IMM:
