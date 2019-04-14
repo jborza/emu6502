@@ -85,7 +85,7 @@ int emulate_6502_op(State6502 * state) {
 		state->flags.b = 1;
 		break; //BRK
 	case NOP: break; //NOP
-	case ORA_IND_X: //ORA, indirect, x
+	case ORA_INDX: //ORA, indirect, x
 		//The address to be accessed by an instruction using X register indexed absolute addressing is computed by taking the 16 bit address 
 		//from the instruction and added the contents of the X register. 
 		//For example if X contains $92 then an STA $2000,X instruction will store the accumulator at $2092 (e.g. $2000 + $92). (STA)
@@ -101,7 +101,7 @@ int emulate_6502_op(State6502 * state) {
 		ORA(state, state->memory[address]);
 		break;
 	}
-	case ORA_IND_Y: //ORA, indirect, y (post_indexed)
+	case ORA_INDY: //ORA, indirect, y (post_indexed)
 	{
 		word address_indirect = pop_word(state);
 		word address = get_word(state, address_indirect) + state->y;
@@ -112,7 +112,7 @@ int emulate_6502_op(State6502 * state) {
 	case ORA_IMM:
 		ORA(state, pop_byte(state));
 		break;
-	case ORA_ZP_X:
+	case ORA_ZPX:
 	{
 		byte address = pop_byte(state) + state->x;
 		ORA(state, state->memory[address]);
@@ -124,13 +124,13 @@ int emulate_6502_op(State6502 * state) {
 		ORA(state, state->memory[address]);
 		break;
 	}
-	case ORA_ABS_X:
+	case ORA_ABSX:
 	{
 		word address = pop_word(state) + state->x;
 		ORA(state, state->memory[address]);
 		break;
 	}
-	case ORA_ABS_Y:
+	case ORA_ABSY:
 	{
 		word address = pop_word(state) + state->y;
 		ORA(state, state->memory[address]);
@@ -141,7 +141,41 @@ int emulate_6502_op(State6502 * state) {
 		LDA(state, pop_byte(state));
 		break;
 	}
-	break;
+	case LDA_ZP:
+	{
+		byte address = pop_byte(state);
+		LDA(state, state->memory[address]);
+		break;
+	}
+	case LDA_ZPX:
+	{
+		byte address = pop_byte(state) + state->x;
+		LDA(state, state->memory[address]);
+		break;
+	}
+	case LDA_ABS:
+	{
+		word address = pop_word(state);
+		LDA(state, state->memory[address]);
+		break;
+	}
+	case LDA_ABSX:
+	{
+		word address = pop_word(state) + state->x;
+		LDA(state, state->memory[address]);
+		break;
+	}
+	case LDA_ABSY:
+	{
+		word address = pop_word(state) + state->y;
+		LDA(state, state->memory[address]);
+		break;
+	}
+	case LDA_INDX:
+	{
+
+	}
+	case LDA_INDY:
 	default:
 		unimplemented_instruction(state); break;
 	}
