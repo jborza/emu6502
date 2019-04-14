@@ -68,6 +68,14 @@ void LDY(State6502* state, byte operand) {
 	set_NV_flags(state, state->y);
 }
 
+void STX(State6502* state, word address) {
+	state->memory[address] = state->x;
+}
+
+void STY(State6502* state, word address) {
+	state->memory[address] = state->y;
+}
+
 word pop_word(State6502* state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -79,10 +87,20 @@ word read_word(State6502 * state, word address) {
 	return state->memory[address] | state->memory[address + 1] << 8;
 }
 
+word get_address_zero_page(State6502* state) {
+	return pop_byte(state);
+}
+
 byte get_byte_zero_page(State6502 * state) {
 	//8 bit addressing, only the first 256 bytes of the memory
 	byte address = pop_byte(state);
 	return state->memory[address];
+}
+
+word get_address_zero_page_x(State6502* state) {
+	//address is zero page, so wraparound byte
+	byte address = pop_byte(state) + state->x;
+	return address;
 }
 
 byte get_byte_zero_page_x(State6502 * state) {
@@ -90,16 +108,26 @@ byte get_byte_zero_page_x(State6502 * state) {
 	return state->memory[address];
 }
 
-byte get_byte_zero_page_y(State6502 * state) {
+word get_address_zero_page_y(State6502* state) {
+	//address is zero page, so wraparound byte
 	byte address = pop_byte(state) + state->y;
-	return state->memory[address];
+	return address;
+}
+
+byte get_byte_zero_page_y(State6502 * state) {
+	return state->memory[get_address_zero_page_y(state)];
+}
+
+word get_address_absolute(State6502 * state) {
+	//absolute indexed, 16 bits
+	word address = pop_word(state);
+	return address;
 }
 
 byte get_byte_absolute(State6502 * state)
 {
 	//absolute indexed, 16 bits
-	word address = pop_word(state);
-	return state->memory[address];
+	return state->memory[get_address_absolute(state)];
 }
 
 byte get_byte_absolute_x(State6502 * state) {
@@ -284,14 +312,14 @@ int emulate_6502_op(State6502 * state) {
 	case STA_ABS: unimplemented_instruction(state); break;
 	case STA_ABSX: unimplemented_instruction(state); break;
 	case STA_ABSY: unimplemented_instruction(state); break;
-	case STA_INDX: unimplemented_instruction(state); break;
+	case STA_INDX:  unimplemented_instruction(state); break;
 	case STA_INDY: unimplemented_instruction(state); break;
-	case STX_ZP: unimplemented_instruction(state); break;
-	case STX_ZPY: unimplemented_instruction(state); break;
-	case STX_ABS: unimplemented_instruction(state); break;
-	case STY_ZP: unimplemented_instruction(state); break;
-	case STY_ZPX: unimplemented_instruction(state); break;
-	case STY_ABS: unimplemented_instruction(state); break;
+	case STX_ZP: STX(state, get_address_zero_page(state)); break;
+	case STX_ZPY: STX(state, get_address_zero_page_y(state)); break;
+	case STX_ABS: STX(state, get_address_absolute(state)); break;
+	case STY_ZP: STY(state, get_address_zero_page(state));  break;
+	case STY_ZPX: STY(state, get_address_zero_page_x(state)); break;
+	case STY_ABS:  STY(state, get_address_absolute(state)); break;
 
 	default:
 		unimplemented_instruction(state); break;
