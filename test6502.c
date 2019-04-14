@@ -56,7 +56,7 @@ State6502 create_blank_state() {
 
 void assertA(State6502* state, byte expected) {
 	if (state->a != expected) {
-		printf("Unexpected value in A, was %02x, expected %02x", expected, state->a);
+		printf("Unexpected value in A, expected %02X, was %02X", expected, state->a);
 		exit(1);
 	}
 }
@@ -64,7 +64,7 @@ void assertA(State6502* state, byte expected) {
 ////////////////////////////////////////
 
 
-//
+//// LDA
 
 void test_LDA_IMM() {
 	//initialize
@@ -107,7 +107,7 @@ void test_LDA_ZPX() {
 	state.x = 0x01;
 
 	//arrange
-	char program[] = { LDA_ZPX, 0x02, 0x00, 0xAA }; //LDA $2,x
+	char program[] = { LDA_ZPX, 0x02, 0x00, 0xAA }; //LDA $02,X
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
@@ -125,7 +125,7 @@ void test_LDA_ABS() {
 	State6502 state = create_blank_state();
 
 	//arrange
-	char program[] = { LDA_ABS, 0x01, 0x04, 0xAA }; //LDA $0401
+	char program[] = { LDA_ABS, 0x01, 0x04 }; //LDA $0401
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x401] = 0xAA;
 
@@ -145,7 +145,7 @@ void test_LDA_ABSX() {
 	state.x = 0x02;
 
 	//arrange
-	char program[] = { LDA_ABSX, 0x01, 0x04, 0xAA }; //LDA $0401,x
+	char program[] = { LDA_ABSX, 0x01, 0x04 }; //LDA $0401,x
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x403] = 0xAA;
 
@@ -165,7 +165,7 @@ void test_LDA_ABSY() {
 	state.y = 0x02;
 
 	//arrange
-	char program[] = { LDA_ABSY, 0x01, 0x04, 0xAA }; //LDA $0401,y
+	char program[] = { LDA_ABSY, 0x01, 0x04 }; //LDA $0401,y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x403] = 0xAA;
 
@@ -207,7 +207,7 @@ void test_LDA_INDY() {
 	state.y = 0x05;
 
 	//arrange
-	char program[] = { LDA_INDY, 0x3E, 0x04, 0xAA }; //LDA ($3E),y
+	char program[] = { LDA_INDY, 0x3E }; //LDA ($3E),y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x3E] = 0xA0; //0x04A0
 	state.memory[0x3F] = 0x04;
@@ -223,19 +223,181 @@ void test_LDA_INDY() {
 	test_cleanup(&state);
 }
 
+//// ORA
+
+void test_ORA_IMM() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_IMM, 0xA0 }; //ORA #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	test_cleanup(&state);
+}
+
+void test_ORA_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_ZP, 0x03, 0x00, 0xA0 }; //ORA $3
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_ZPX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x01;
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_ZPX, 0x02, 0x00, 0xA0 }; //ORA $2,x
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_ABS, 0x01, 0x04 }; //ORA $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x02;
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_ABSX, 0x01, 0x04 }; //ORA $0401,x
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_ABSY, 0x01, 0x04}; //ORA $0401,y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_INDX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x05;
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_INDX, 0x3E }; //ORA ($3E, x)
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0043] = 0xA9;
+	state.memory[0x0044] = 0x04;
+	state.memory[0x04A9] = 0xA0;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ORA_INDY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x05;
+	state.a = 0x0A;
+
+	//arrange
+	char program[] = { ORA_INDY, 0x3E, 0x04, 0xAA }; //ORA ($3E),y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x3E] = 0xA0; //0x04A0
+	state.memory[0x3F] = 0x04;
+	state.memory[0x04A5] = 0xA0; //address 0x04A0 + 0x05 = 0x04A5
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 typedef void fp();
-fp* tests[4] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS };
+fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
+fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY};
 
 void run_tests() {
-	for(int i = 0; i < sizeof(tests)/sizeof(fp*); i++)
-		tests[i]();
-	test_LDA_IMM();
-	test_LDA_ZP();
-	test_LDA_ZPX();
-	test_LDA_ABS();
-	test_LDA_ABSX();
-	test_LDA_ABSY();
-	test_LDA_INDX();
-	test_LDA_INDY();
+	for(int i = 0; i < sizeof(tests_lda)/sizeof(fp*); i++)
+		tests_lda[i]();
+	for (int i = 0; i < sizeof(tests_ora) / sizeof(fp*); i++)
+		tests_ora[i]();
 }
