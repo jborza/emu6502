@@ -24,7 +24,17 @@ void print_all(State6502* state) {
 	//print_memory(state, 0x40);
 	//print_memory(state, 0x80);
 	printf("\n");
+}
 
+void test_step(State6502* state) {
+	print_all(state);
+	disassemble_6502(state->memory, state->pc);
+	emulate_6502_op(state);
+	print_all(state);
+}
+
+void test_cleanup(State6502* state) {
+	free(state->memory);
 }
 
 State6502 create_blank_state() {
@@ -51,16 +61,12 @@ void test_LDA_IMM() {
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
-	print_all(&state);
-	disassemble_6502(state.memory, state.pc);
-	emulate_6502_op(&state);
-	print_all(&state);
+	test_step(&state);
 
 	//assert	
 	assertA(&state, 0xAA);
 
-	//cleanup
-	free(state.memory);
+	test_cleanup(&state);
 }
 
 void test_LDA_ZP() {
@@ -72,16 +78,13 @@ void test_LDA_ZP() {
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
-	print_all(&state);
-	disassemble_6502(state.memory, state.pc);
-	emulate_6502_op(&state);
-	print_all(&state);
+	test_step(&state);
 
 	//assert	
 	assertA(&state, 0xAA);
 
 	//cleanup
-	free(state.memory);
+	test_cleanup(&state);
 }
 
 void test_LDA_ZPX() {
@@ -94,16 +97,13 @@ void test_LDA_ZPX() {
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
-	print_all(&state);
-	disassemble_6502(state.memory, state.pc);
-	emulate_6502_op(&state);
-	print_all(&state);
+	test_step(&state);
 
 	//assert	
 	assertA(&state, 0xAA);
 
 	//cleanup
-	free(state.memory);
+	test_cleanup(&state);
 }
 
 void test_LDA_ABS() {
@@ -116,16 +116,13 @@ void test_LDA_ABS() {
 	state.memory[0x401] = 0xAA;
 
 	//act
-	print_all(&state);
-	disassemble_6502(state.memory, state.pc);
-	emulate_6502_op(&state);
-	print_all(&state);
+	test_step(&state);
 
 	//assert	
 	assertA(&state, 0xAA);
 
 	//cleanup
-	free(state.memory);
+	test_cleanup(&state);
 }
 
 int main()
