@@ -75,7 +75,7 @@ word pop_word(State6502 * state) {
 }
 
 word get_word(State6502 * state, word address) {
-	return state->memory[address] << 8 | state->memory[address + 1];
+	return state->memory[address] | state->memory[address + 1] << 8;
 }
 
 int emulate_6502_op(State6502 * state) {
@@ -173,9 +173,22 @@ int emulate_6502_op(State6502 * state) {
 	}
 	case LDA_INDX:
 	{
-
-	}
+		//pre-indexed indirect
+		//zero-page address is added to x register
+		byte indirect_address = pop_byte(state) + state->x;
+		//pointing to address of a word holding the address of the operand
+		word address = get_word(state, indirect_address);
+		LDA(state, state->memory[address]);
+		break;
+	}	
 	case LDA_INDY:
+	{
+		//post-indexed indirect
+		byte indirect_address = pop_byte(state);
+		word address = get_word(state, indirect_address) + state->y;
+		LDA(state, state->memory[address]);
+		break;
+	}
 	default:
 		unimplemented_instruction(state); break;
 	}

@@ -125,12 +125,100 @@ void test_LDA_ABS() {
 	test_cleanup(&state);
 }
 
+void test_LDA_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x02;
+
+	//arrange
+	char program[] = { LDA_ABSX, 0x01, 0x04, 0xAA }; //LDA $0401,x
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDA_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+
+	//arrange
+	char program[] = { LDA_ABSY, 0x01, 0x04, 0xAA }; //LDA $0401,y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDA_INDX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x05;
+
+	//arrange
+	char program[] = { LDA_INDX, 0x3E }; //LDA ($3E, x)
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0043] = 0xA9;
+	state.memory[0x0044] = 0x04;
+	state.memory[0x04A9] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDA_INDY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x05;
+
+	//arrange
+	char program[] = { LDA_INDY, 0x3E, 0x04, 0xAA }; //LDA ($3E),y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x3E] = 0xA0; //0x04A0
+	state.memory[0x3F] = 0x04; 
+	state.memory[0x04A5] = 0xAA; //address 0x04A0 + 0x05 = 0x04A5
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 int main()
 {
-	test_LDA_IMM();
-	test_LDA_ZP();
-	test_LDA_ZPX();
-	test_LDA_ABS();
+	//test_LDA_IMM();
+	//test_LDA_ZP();
+	//test_LDA_ZPX();
+	//test_LDA_ABS();
+	//test_LDA_ABSX();
+	//test_LDA_ABSY();
+	test_LDA_INDX();
+	test_LDA_INDY();
 }
 
 int emulate() {
