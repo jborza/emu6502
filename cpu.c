@@ -70,6 +70,7 @@ word read_word(State6502 * state, word address) {
 }
 
 byte get_byte_zero_page(State6502 * state) {
+	//8 bit addressing, only the first 256 bytes of the memory
 	byte address = pop_byte(state);
 	return state->memory[address];
 }
@@ -86,17 +87,38 @@ byte get_byte_zero_page_y(State6502 * state) {
 
 byte get_byte_absolute(State6502 * state)
 {
+	//absolute indexed, 16 bits
 	word address = pop_word(state);
 	return state->memory[address];
 }
 
 byte get_byte_absolute_x(State6502 * state) {
+	//absolute added with the contents of x register
 	word address = pop_word(state) + state->x;
 	return state->memory[address];
 }
 
 byte get_byte_absolute_y(State6502 * state) {
+	//absolute added with the contents of y register
 	word address = pop_word(state) + state->y;
+	return state->memory[address];
+}
+
+byte get_byte_indirect_x(State6502 * state) {
+	//pre-indexed indirect with the X register
+	//zero-page address is added to x register
+	byte indirect_address = pop_byte(state) + state->x;
+	//pointing to address of a word holding the address of the operand
+	word address = read_word(state, indirect_address);
+	return state->memory[address];
+}
+
+byte get_byte_indirect_y(State6502 * state) {
+	//post-indexed indirect
+	//zero-page address as an argument
+	byte indirect_address = pop_byte(state);
+	//the address and the following byte is read as a word, adding Y register
+	word address = read_word(state, indirect_address) + state->y;
 	return state->memory[address];
 }
 
@@ -117,8 +139,8 @@ int emulate_6502_op(State6502 * state) {
 	case AND_ABS: AND(state, get_byte_absolute(state)); break;
 	case AND_ABSX: AND(state, get_byte_absolute_x(state)); break;
 	case AND_ABSY: AND(state, get_byte_absolute_y(state)); break;
-	case AND_INDX: unimplemented_instruction(state); break;
-	case AND_INDY: unimplemented_instruction(state); break;
+	case AND_INDX: AND(state, get_byte_indirect_x(state)); break;
+	case AND_INDY: AND(state, get_byte_indirect_y(state)); break;
 	case ASL_ACC: unimplemented_instruction(state); break;
 	case ASL_ZP: unimplemented_instruction(state); break;
 	case ASL_ZPX: unimplemented_instruction(state); break;
@@ -200,26 +222,8 @@ int emulate_6502_op(State6502 * state) {
 	case LDA_ABS: LDA(state, get_byte_absolute(state)); break;
 	case LDA_ABSX: LDA(state, get_byte_absolute_x(state)); break;
 	case LDA_ABSY: LDA(state, get_byte_absolute_y(state)); break;
-	case LDA_INDX:
-	{
-		//pre-indexed indirect
-		//zero-page address is added to x register
-		byte indirect_address = pop_byte(state) + state->x;
-		//pointing to address of a word holding the address of the operand
-		word address = read_word(state, indirect_address);
-		LDA(state, state->memory[address]);
-		break;
-	}
-	case LDA_INDY:
-	{
-		//post-indexed indirect
-		//zero-page address as an argument
-		byte indirect_address = pop_byte(state);
-		//the address and the following byte is read as a word, adding Y register
-		word address = read_word(state, indirect_address) + state->y;
-		LDA(state, state->memory[address]);
-		break;
-	}
+	case LDA_INDX: LDA(state, get_byte_indirect_x(state)); break;
+	case LDA_INDY: LDA(state, get_byte_indirect_y(state)); break;
 	case LDX_IMM: unimplemented_instruction(state); break;
 	case LDX_ZP: unimplemented_instruction(state); break;
 	case LDX_ZPY: unimplemented_instruction(state); break;
@@ -241,26 +245,8 @@ int emulate_6502_op(State6502 * state) {
 	case ORA_ABS: ORA(state, get_byte_absolute(state)); break;
 	case ORA_ABSX: ORA(state, get_byte_absolute_x(state)); break;
 	case ORA_ABSY: ORA(state, get_byte_absolute_y(state)); break;
-	case ORA_INDX: //ORA, indirect, x
-	{
-		//pre-indexed indirect
-		//zero-page address is added to x register
-		byte indirect_address = pop_byte(state) + state->x;
-		//pointing to address of a word holding the address of the operand
-		word address = read_word(state, indirect_address);
-		ORA(state, state->memory[address]);
-		break;
-	}
-	case ORA_INDY: //ORA, indirect, y (post_indexed)
-	{
-		//post-indexed indirect
-		//zero-page address as an argument
-		byte indirect_address = pop_byte(state);
-		//the address and the following byte is read as a word, adding Y register
-		word address = read_word(state, indirect_address) + state->y;
-		ORA(state, state->memory[address]);
-		break;
-	}
+	case ORA_INDX: ORA(state, get_byte_indirect_x(state)); break;
+	case ORA_INDY: ORA(state, get_byte_indirect_y(state)); break;
 	case ROL_ACC: unimplemented_instruction(state); break;
 	case ROL_ZP: unimplemented_instruction(state); break;
 	case ROL_ZPX: unimplemented_instruction(state); break;
