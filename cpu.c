@@ -63,6 +63,11 @@ void LDX(State6502* state, byte operand) {
 	set_NV_flags(state, state->x);
 }
 
+void LDY(State6502* state, byte operand) {
+	state->y = operand;
+	set_NV_flags(state, state->y);
+}
+
 word pop_word(State6502* state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -236,13 +241,13 @@ int emulate_6502_op(State6502 * state) {
 	case LDX_IMM: LDX(state, pop_byte(state)); break;
 	case LDX_ZP: LDX(state, get_byte_zero_page(state)); break;
 	case LDX_ZPY: LDX(state, get_byte_zero_page_y(state)); break;
-	case LDX_ABS: LDX(state, get_byte_absolute_x(state)); break;
+	case LDX_ABS: LDX(state, get_byte_absolute(state)); break;
 	case LDX_ABSY: LDX(state, get_byte_absolute_y(state)); break;
-	case LDY_IMM: unimplemented_instruction(state); break;
-	case LDY_ZP: unimplemented_instruction(state); break;
-	case LDY_ZPX: unimplemented_instruction(state); break;
-	case LDY_ABS: unimplemented_instruction(state); break;
-	case LDY_ABSX: unimplemented_instruction(state); break;
+	case LDY_IMM: LDY(state, pop_byte(state)); break;
+	case LDY_ZP: LDY(state, get_byte_zero_page(state)); break;
+	case LDY_ZPX: LDY(state, get_byte_zero_page_x(state)); break;
+	case LDY_ABS: LDY(state, get_byte_absolute(state)); break;
+	case LDY_ABSX: LDY(state, get_byte_absolute_x(state)); break;
 	case LSR_ACC: unimplemented_instruction(state); break;
 	case LSR_ZP: unimplemented_instruction(state); break;
 	case LSR_ZPX: unimplemented_instruction(state); break;

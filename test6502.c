@@ -611,10 +611,10 @@ void test_LDX_ZP() {
 void test_LDX_ZPY() {
 	//initialize
 	State6502 state = create_blank_state();
-	state.x = 0x01;
+	state.y = 0x01;
 
 	//arrange
-	char program[] = { LDX_ZPY, 0x02, 0x00, 0xAA }; //LDX $02,X
+	char program[] = { LDX_ZPY, 0x02, 0x00, 0xAA }; //LDX $02,Y
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
@@ -666,6 +666,101 @@ void test_LDX_ABSY() {
 	test_cleanup(&state);
 }
 
+//// LDY
+
+void test_LDY_IMM() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDY_IMM, 0xAA }; //LDY #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0xAA);
+
+	test_cleanup(&state);
+}
+
+void test_LDY_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDY_ZP, 0x03, 0x00, 0xAA }; //LDY $3
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDY_ZPX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x01;
+
+	//arrange
+	char program[] = { LDY_ZPX, 0x02, 0x00, 0xAA }; //LDY $02,X
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDY_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDY_ABS, 0x01, 0x04 }; //LDY $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDY_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+
+	//arrange
+	char program[] = { LDY_ABSX, 0x01, 0x04 }; //LDY $0401,x
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -673,6 +768,7 @@ fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS, test_
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY};
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
 fp* tests_ldx[] = { test_LDX_IMM, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
+fp* tests_ldy[] = { test_LDY_IMM, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_LDY_ABSX };
 
 void run_suite(fp* suite[]) {
 	for (int i = 0; i < sizeof(suite) / sizeof(fp*); i++)
@@ -684,4 +780,5 @@ void run_tests() {
 	run_suite(tests_ora);
 	run_suite(tests_and);
 	run_suite(tests_ldx);
+	run_suite(tests_ldy);
 }
