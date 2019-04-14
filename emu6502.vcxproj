@@ -89,7 +89,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -121,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -152,11 +152,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpu.c" />
+    <ClCompile Include="disassembler.c" />
     <ClCompile Include="emu6502.c" />
+    <ClCompile Include="test6502.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cpu.h" />
+    <ClInclude Include="disassembler.h" />
     <ClInclude Include="flags.h" />
+    <ClInclude Include="opcodes.h" />
     <ClInclude Include="state.h" />
+    <ClInclude Include="test6502.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
