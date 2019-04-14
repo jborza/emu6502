@@ -22,12 +22,15 @@ steps:
     restoreSolution: '$(solution)'
 
 - task: VSBuild@1
+  displayName: Build the C++ solution
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-
-- task: VSTest@2
+    
+- task: BatchScript@1
+  name: test
+  displayName: Run test suite
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    filename: '$(Build.SourcesDirectory)\Release\emu6502.exe'
+    failOnStandardError: true
