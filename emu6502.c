@@ -73,7 +73,7 @@ void test_LDA_ZP() {
 
 	//act
 	print_all(&state);
-	disassemble_6502(&state.memory, state.pc);
+	disassemble_6502(state.memory, state.pc);
 	emulate_6502_op(&state);
 	print_all(&state);
 
@@ -95,7 +95,29 @@ void test_LDA_ZPX() {
 
 	//act
 	print_all(&state);
-	disassemble_6502(&state.memory, state.pc);
+	disassemble_6502(state.memory, state.pc);
+	emulate_6502_op(&state);
+	print_all(&state);
+
+	//assert	
+	assertA(&state, 0xAA);
+
+	//cleanup
+	free(state.memory);
+}
+
+void test_LDA_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_ABS, 0x01, 0x04, 0xAA }; //LDA $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0xAA;
+
+	//act
+	print_all(&state);
+	disassemble_6502(state.memory, state.pc);
 	emulate_6502_op(&state);
 	print_all(&state);
 
@@ -109,8 +131,9 @@ void test_LDA_ZPX() {
 int main()
 {
 	test_LDA_IMM();
-	//test_LDA_ZP();
-	//test_LDA_ZPX();
+	test_LDA_ZP();
+	test_LDA_ZPX();
+	test_LDA_ABS();
 }
 
 int emulate() {
