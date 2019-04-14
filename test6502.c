@@ -61,6 +61,20 @@ void assertA(State6502* state, byte expected) {
 	}
 }
 
+void assertX(State6502* state, byte expected) {
+	if (state->x != expected) {
+		printf("Unexpected value in X, expected %02X, was %02X", expected, state->x);
+		exit(1);
+	}
+}
+
+void assertY(State6502* state, byte expected) {
+	if (state->y != expected) {
+		printf("Unexpected value in X, expected %02X, was %02X", expected, state->y);
+		exit(1);
+	}
+}
+
 ////////////////////////////////////////
 
 
@@ -557,17 +571,117 @@ void test_AND_INDY() {
 	test_cleanup(&state);
 }
 
+//// LDX
+
+void test_LDX_IMM() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDX_IMM, 0xAA }; //LDX #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0xAA);
+
+	test_cleanup(&state);
+}
+
+void test_LDX_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDX_ZP, 0x03, 0x00, 0xAA }; //LDX $3
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDX_ZPY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x01;
+
+	//arrange
+	char program[] = { LDX_ZPY, 0x02, 0x00, 0xAA }; //LDX $02,X
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDX_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDX_ABS, 0x01, 0x04 }; //LDX $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDX_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+
+	//arrange
+	char program[] = { LDX_ABSY, 0x01, 0x04 }; //LDX $0401,y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0xAA;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
+
 typedef void fp();
 fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY};
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
+fp* tests_ldx[] = { test_LDX_IMM, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
+
+void run_suite(fp* suite[]) {
+	for (int i = 0; i < sizeof(suite) / sizeof(fp*); i++)
+		suite[i]();
+}
 
 void run_tests() {
-	for(int i = 0; i < sizeof(tests_lda)/sizeof(fp*); i++)
-		tests_lda[i]();
-	for (int i = 0; i < sizeof(tests_ora) / sizeof(fp*); i++)
-		tests_ora[i]();
-	for (int i = 0; i < sizeof(tests_and) / sizeof(fp*); i++)
-		tests_and[i]();
+	run_suite(tests_lda);
+	run_suite(tests_ora);
+	run_suite(tests_and);
+	run_suite(tests_ldx);
 }
