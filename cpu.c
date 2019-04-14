@@ -62,7 +62,7 @@ void ORA(State6502 * state, byte operand) {
 }
 
 //load accumulator
-void LDA(State6502* state, byte operand) {
+void LDA(State6502 * state, byte operand) {
 	state->a = operand;
 	set_NV_flags(state, state->a);
 }
@@ -81,29 +81,34 @@ word get_word(State6502 * state, word address) {
 int emulate_6502_op(State6502 * state) {
 	byte* opcode = &state->memory[state->pc++];
 	switch (*opcode) {
-	case BRK: state->running = 0; 
+	case BRK: state->running = 0;
 		state->flags.b = 1;
 		break; //BRK
 	case NOP: break; //NOP
 	case ORA_IND_X: //ORA, indirect, x
-		unimplemented_instruction(state);
+		//The address to be accessed by an instruction using X register indexed absolute addressing is computed by taking the 16 bit address 
+		//from the instruction and added the contents of the X register. 
+		//For example if X contains $92 then an STA $2000,X instruction will store the accumulator at $2092 (e.g. $2000 + $92). (STA)
+	{
+		word address_indirect = pop_word(state) + state->x;
+		word address = get_word(state, address_indirect);
+		ORA(state, state->memory[address]);
 		break;
+	}
 	case ORA_ZP: //ORA, zero page
 	{
 		byte address = pop_byte(state);
 		ORA(state, state->memory[address]);
 		break;
 	}
-	case ORA_IND_Y:
-		//The value in Y is added to the address at the little-endian address stored at the two-byte pair of the specified address (LSB) and the specified address plus one (MSB). 
-		//The value at the sum address is used to perform the computation. Indeed addressing mode actually repeats exactly the accumulator register's digits. 
-		// Example
-		//The value $03 in Y is added to the address $C235 at addresses $002A and $002B for a sum of $C238. The value $2F at $C238 is shifted right (yielding $17) and written back to $C238. 
-		//word address = pop_word(state) + state->y;
-		//word value = get_word(state, address);
-		//ORA(state, state->memory[value]);
+	case ORA_IND_Y: //ORA, indirect, y (post_indexed)
+	{
+		word address_indirect = pop_word(state);
+		word address = get_word(state, address_indirect) + state->y;
+		ORA(state, state->memory[address]);
 		unimplemented_instruction(state);
 		break;
+	}
 	case ORA_IMM:
 		ORA(state, pop_byte(state));
 		break;
@@ -133,7 +138,7 @@ int emulate_6502_op(State6502 * state) {
 	}
 	case LDA_IMM:
 	{
-		LDA(state,pop_byte(state));
+		LDA(state, pop_byte(state));
 		break;
 	}
 	break;
