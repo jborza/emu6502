@@ -1,9 +1,13 @@
 #include <memory.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "types.h"
 #include "test6502.h"
 #include "opcodes.h"
 #include "state.h"
 #include "disassembler.h"
+#include "cpu.h"
+
 
 void print_state(State6502* state) {
 	printf("\tC=%d,Z=%d,I=%d,D=%d,B=%d,V=%d,N=%d\n", state->flags.c, state->flags.z, state->flags.i, state->flags.d, state->flags.b, state->flags.v, state->flags.n);

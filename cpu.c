@@ -3,6 +3,7 @@
 #include "opcodes.h"
 #include <stdio.h>
 #include <memory.h>
+#include <stdlib.h>
 
 void* unimplemented_instruction(State6502* state) {
 	printf("Error: unimplemented instruction\n");

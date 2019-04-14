@@ -55,3 +55,5 @@ dkms.conf
 /.vs/
 /Debug
 /Release
+/emu6502.vcxproj.user
+/emu6502.vcxproj.filters
