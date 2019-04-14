@@ -2,6 +2,7 @@
 #include "cpu.h"
 #include "opcodes.h"
 #include <stdio.h>
+#include <memory.h>
 
 void* unimplemented_instruction(State6502* state) {
 	printf("Error: unimplemented instruction\n");
@@ -28,30 +29,12 @@ void clear_state(State6502* state) {
 	state->y = 0;
 	state->pc = 0;
 	state->sp = 0;
-	//state -> flags = (Flags)0;
 	clear_flags(state);
 	state->running = 1;
 }
 
 byte pop_byte(State6502* state) {
 	return state->memory[state->pc++];
-}
-
-void print_state(State6502* state) {
-	printf("\tC=%d,Z=%d,I=%d,D=%d,B=%d,V=%d,N=%d\n", state->flags.c, state->flags.z, state->flags.i, state->flags.d, state->flags.b, state->flags.v, state->flags.n);
-	printf("\tA $%02x X $%02x Y $%02x SP $%02x PC $%04x\n", state->a, state->x, state->y, state->sp, state->pc);
-}
-
-void print_memory(State6502* state, word offset) {
-	printf("$%04x: ", offset);
-	for (byte i = 0; i < 32; i++) {
-		printf("%02x", state->memory[offset + i]);
-		if (i % 8 == 7)
-			printf("|");
-		else
-			printf(" ");
-	}
-	printf("\n");
 }
 
 //bitwise or with accumulator
@@ -184,7 +167,9 @@ int emulate_6502_op(State6502 * state) {
 	case LDA_INDY:
 	{
 		//post-indexed indirect
+		//zero-page address as an argument
 		byte indirect_address = pop_byte(state);
+		//the address and the following byte is read as a word, adding Y register
 		word address = read_word(state, indirect_address) + state->y;
 		LDA(state, state->memory[address]);
 		break;
