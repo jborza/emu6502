@@ -211,12 +211,12 @@ void test_LDA_INDY() {
 
 int main()
 {
-	//test_LDA_IMM();
-	//test_LDA_ZP();
-	//test_LDA_ZPX();
-	//test_LDA_ABS();
-	//test_LDA_ABSX();
-	//test_LDA_ABSY();
+	test_LDA_IMM();
+	test_LDA_ZP();
+	test_LDA_ZPX();
+	test_LDA_ABS();
+	test_LDA_ABSX();
+	test_LDA_ABSY();
 	test_LDA_INDX();
 	test_LDA_INDY();
 }

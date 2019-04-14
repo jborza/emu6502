@@ -74,7 +74,7 @@ word pop_word(State6502 * state) {
 	return result;
 }
 
-word get_word(State6502 * state, word address) {
+word read_word(State6502 * state, word address) {
 	return state->memory[address] | state->memory[address + 1] << 8;
 }
 
@@ -91,7 +91,7 @@ int emulate_6502_op(State6502 * state) {
 		//For example if X contains $92 then an STA $2000,X instruction will store the accumulator at $2092 (e.g. $2000 + $92). (STA)
 	{
 		word address_indirect = pop_word(state) + state->x;
-		word address = get_word(state, address_indirect);
+		word address = read_word(state, address_indirect);
 		ORA(state, state->memory[address]);
 		break;
 	}
@@ -104,7 +104,7 @@ int emulate_6502_op(State6502 * state) {
 	case ORA_INDY: //ORA, indirect, y (post_indexed)
 	{
 		word address_indirect = pop_word(state);
-		word address = get_word(state, address_indirect) + state->y;
+		word address = read_word(state, address_indirect) + state->y;
 		ORA(state, state->memory[address]);
 		unimplemented_instruction(state);
 		break;
@@ -177,7 +177,7 @@ int emulate_6502_op(State6502 * state) {
 		//zero-page address is added to x register
 		byte indirect_address = pop_byte(state) + state->x;
 		//pointing to address of a word holding the address of the operand
-		word address = get_word(state, indirect_address);
+		word address = read_word(state, indirect_address);
 		LDA(state, state->memory[address]);
 		break;
 	}	
@@ -185,7 +185,7 @@ int emulate_6502_op(State6502 * state) {
 	{
 		//post-indexed indirect
 		byte indirect_address = pop_byte(state);
-		word address = get_word(state, indirect_address) + state->y;
+		word address = read_word(state, indirect_address) + state->y;
 		LDA(state, state->memory[address]);
 		break;
 	}
