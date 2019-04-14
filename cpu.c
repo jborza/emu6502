@@ -11,20 +11,28 @@ void* unimplemented_instruction(State6502* state) {
 }
 
 void set_NV_flags(State6502* state, byte value) {
-	//TODO implement V flag
+	//N flag
+	state->flags.n = ((1 << 7) & value) != 0;
+	//TODO implement NV flags
+}
+
+void set_NZ_flags(State6502 * state, byte value) {
+	//Z flag
 	if (value) {
 		state->flags.z = 0;
 	}
 	else {
 		state->flags.z = 1;
 	}
+	//N flag
+	state->flags.n = ((1 << 7) & value) != 0;
 }
 
-void clear_flags(State6502* state) {
+void clear_flags(State6502 * state) {
 	memcpy(&state->flags, &state->a, 1);
 }
 
-void clear_state(State6502* state) {
+void clear_state(State6502 * state) {
 	state->a = 0;
 	state->x = 0;
 	state->y = 0;
@@ -34,49 +42,49 @@ void clear_state(State6502* state) {
 	state->running = 1;
 }
 
-byte pop_byte(State6502* state) {
+byte pop_byte(State6502 * state) {
 	return state->memory[state->pc++];
 }
 
 //bitwise or with accumulator
-void ORA(State6502* state, byte operand) {
+void ORA(State6502 * state, byte operand) {
 	byte result = state->a | operand;
 	set_NV_flags(state, result);
 	state->a = result;
 }
 
 //bitwise and with accumulator
-void AND(State6502* state, byte operand) {
+void AND(State6502 * state, byte operand) {
 	byte result = state->a & operand;
 	set_NV_flags(state, result);
 	state->a = result;
 }
 
 //load accumulator
-void LDA(State6502* state, byte operand) {
+void LDA(State6502 * state, byte operand) {
 	state->a = operand;
 	set_NV_flags(state, state->a);
 }
 
-void LDX(State6502* state, byte operand) {
+void LDX(State6502 * state, byte operand) {
 	state->x = operand;
 	set_NV_flags(state, state->x);
 }
 
-void LDY(State6502* state, byte operand) {
+void LDY(State6502 * state, byte operand) {
 	state->y = operand;
 	set_NV_flags(state, state->y);
 }
 
-void STX(State6502* state, word address) {
+void STX(State6502 * state, word address) {
 	state->memory[address] = state->x;
 }
 
-void STY(State6502* state, word address) {
+void STY(State6502 * state, word address) {
 	state->memory[address] = state->y;
 }
 
-word pop_word(State6502* state) {
+word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
 	word result = (high << 8) | low;
@@ -87,7 +95,7 @@ word read_word(State6502 * state, word address) {
 	return state->memory[address] | state->memory[address + 1] << 8;
 }
 
-word get_address_zero_page(State6502* state) {
+word get_address_zero_page(State6502 * state) {
 	return pop_byte(state);
 }
 
@@ -97,7 +105,7 @@ byte get_byte_zero_page(State6502 * state) {
 	return state->memory[address];
 }
 
-word get_address_zero_page_x(State6502* state) {
+word get_address_zero_page_x(State6502 * state) {
 	//address is zero page, so wraparound byte
 	byte address = pop_byte(state) + state->x;
 	return address;
@@ -108,7 +116,7 @@ byte get_byte_zero_page_x(State6502 * state) {
 	return state->memory[address];
 }
 
-word get_address_zero_page_y(State6502* state) {
+word get_address_zero_page_y(State6502 * state) {
 	//address is zero page, so wraparound byte
 	byte address = pop_byte(state) + state->y;
 	return address;
@@ -215,10 +223,10 @@ int emulate_6502_op(State6502 * state) {
 	case SEC: unimplemented_instruction(state); break;
 	case SED: unimplemented_instruction(state); break;
 	case SEI: unimplemented_instruction(state); break;
-	case TAX: unimplemented_instruction(state); break;
-	case TXA: unimplemented_instruction(state); break;
-	case TAY: unimplemented_instruction(state); break;
-	case TYA: unimplemented_instruction(state); break;
+	case TAX: state->x = state->a; set_NZ_flags(state, state->x); break; //TODO test
+	case TXA: state->a = state->x; set_NZ_flags(state, state->a); break; //TODO test
+	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break; //TODO test
+	case TYA: state->a = state->y; set_NZ_flags(state, state->a);  break; //TODO test
 	case TSX: unimplemented_instruction(state); break;
 	case TXS: unimplemented_instruction(state); break;
 	case CMP_IMM: unimplemented_instruction(state); break;
@@ -239,10 +247,10 @@ int emulate_6502_op(State6502 * state) {
 	case DEC_ZPX: unimplemented_instruction(state); break;
 	case DEC_ABS: unimplemented_instruction(state); break;
 	case DEC_ABSX: unimplemented_instruction(state); break;
-	case DEX: unimplemented_instruction(state); break;
-	case DEY: unimplemented_instruction(state); break;
-	case INX: unimplemented_instruction(state); break;
-	case INY: unimplemented_instruction(state); break;
+	case DEX: state->x -= 1; set_NZ_flags(state, state->x); break;
+	case DEY: state->y -= 1; set_NZ_flags(state, state->y); break;
+	case INX: state->x += 1; set_NZ_flags(state, state->x); break;
+	case INY: state->y += 1; set_NZ_flags(state, state->y); break;
 	case EOR_IMM: unimplemented_instruction(state); break;
 	case EOR_ZP: unimplemented_instruction(state); break;
 	case EOR_ZPX: unimplemented_instruction(state); break;
