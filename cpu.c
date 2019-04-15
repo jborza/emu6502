@@ -223,10 +223,10 @@ int emulate_6502_op(State6502 * state) {
 	case BRK: state->running = 0;
 		state->flags.b = 1;
 		break; //BRK
-	case CLC: unimplemented_instruction(state); break;
-	case CLD: unimplemented_instruction(state); break;
-	case CLI: unimplemented_instruction(state); break;
-	case CLV: unimplemented_instruction(state); break;
+	case CLC: state->flags.c = 0; break;
+	case CLD: state->flags.d = 0; break;
+	case CLI: state->flags.i = 0; break;
+	case CLV: state->flags.v = 0; break;
 	case NOP: break; //NOP
 	case PHA: unimplemented_instruction(state); break;
 	case PLA: unimplemented_instruction(state); break;
@@ -238,9 +238,9 @@ int emulate_6502_op(State6502 * state) {
 		unimplemented_instruction(state); break;
 	case RTI: unimplemented_instruction(state); break;
 	case RTS: unimplemented_instruction(state); break;
-	case SEC: unimplemented_instruction(state); break;
-	case SED: unimplemented_instruction(state); break;
-	case SEI: unimplemented_instruction(state); break;
+	case SEC: state->flags.c = 1; break;
+	case SED: state->flags.d = 1; break;
+	case SEI: state->flags.i = 1; break;
 	case TAX: state->x = state->a; set_NZ_flags(state, state->x); break; //TODO test
 	case TXA: state->a = state->x; set_NZ_flags(state, state->a); break; //TODO test
 	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break; //TODO test

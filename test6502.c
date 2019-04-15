@@ -97,6 +97,33 @@ void assert_flag_z(State6502 * state, byte expected) {
 	}
 }
 
+void assert_flag_c(State6502* state, byte expected) {
+	if (state->flags.c != expected) {
+		printf("Unexpected value in flag C, expected %d, was %d", expected, state->flags.c);
+		exit(1);
+	}
+}
+
+void assert_flag_i(State6502* state, byte expected) {
+	if (state->flags.i != expected) {
+		printf("Unexpected value in flag I, expected %d, was %d", expected, state->flags.i);
+		exit(1);
+	}
+}
+
+void assert_flag_d(State6502* state, byte expected) {
+	if (state->flags.d != expected) {
+		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.d);
+		exit(1);
+	}
+}
+
+void assert_flag_v(State6502* state, byte expected) {
+	if (state->flags.v != expected) {
+		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.v);
+		exit(1);
+	}
+}
 ////////////////////////////////////////
 
 
@@ -1237,6 +1264,92 @@ void test_DEC_ZP_wraparound() {
 	test_cleanup(&state);
 }
 
+// FLAGS
+
+void test_SEC() {
+	State6502 state = create_blank_state();
+	
+	char program[] = { SEC };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_c(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_CLC() {
+	State6502 state = create_blank_state();
+	state.flags.c = 1;
+	char program[] = { CLC };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_c(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_SED() {
+	State6502 state = create_blank_state();
+
+	char program[] = { SED };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_d(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_CLD() {
+	State6502 state = create_blank_state();
+	state.flags.d = 1;
+	char program[] = { CLD };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_d(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_SEI() {
+	State6502 state = create_blank_state();
+
+	char program[] = { SEI };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_i(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_CLI() {
+	State6502 state = create_blank_state();
+	state.flags.i = 1;
+	char program[] = { CLI };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_i(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_CLV() {
+	State6502 state = create_blank_state();
+	state.flags.v = 1;
+	char program[] = { CLV };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_flag_v(&state, 0);
+
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -1250,7 +1363,7 @@ fp* tests_sty[] = { test_STY_ZP, test_STY_ZPX, test_STY_ABS };
 fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DEY_wraparound, test_INX, test_INX_wraparound, test_INY, test_INY_wraparound };
 fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
 fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
-
+fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
 void run_suite(fp * *suite, int size) {
@@ -1270,4 +1383,5 @@ void run_tests() {
 	RUN(tests_inx_iny_dex_dey);
 	RUN(tests_txa_etc);
 	RUN(tests_inc_dec);
+	RUN(tests_flags);
 }
