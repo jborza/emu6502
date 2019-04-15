@@ -77,6 +77,10 @@ void LDY(State6502 * state, byte operand) {
 	set_NV_flags(state, state->y);
 }
 
+void STA(State6502 * state, word address) {
+	state->memory[address] = state->a;
+}
+
 void STX(State6502 * state, word address) {
 	state->memory[address] = state->x;
 }
@@ -173,22 +177,31 @@ byte get_byte_absolute_y(State6502 * state) {
 	return state->memory[get_address_absolute_y(state)];
 }
 
-byte get_byte_indirect_x(State6502 * state) {
+word get_address_indirect_x(State6502 * state) {
 	//pre-indexed indirect with the X register
 	//zero-page address is added to x register
 	byte indirect_address = pop_byte(state) + state->x;
 	//pointing to address of a word holding the address of the operand
 	word address = read_word(state, indirect_address);
-	return state->memory[address];
+	return address;
 }
 
-byte get_byte_indirect_y(State6502 * state) {
+byte get_byte_indirect_x(State6502 * state) {
+	//pre-indexed indirect with the X register
+	return state->memory[get_address_indirect_x(state)];
+}
+
+word get_address_indirect_y(State6502 * state) {
 	//post-indexed indirect
 	//zero-page address as an argument
 	byte indirect_address = pop_byte(state);
 	//the address and the following byte is read as a word, adding Y register
 	word address = read_word(state, indirect_address) + state->y;
-	return state->memory[address];
+	return address;
+}
+
+byte get_byte_indirect_y(State6502 * state) {
+	return state->memory[get_address_indirect_y(state)];
 }
 
 int emulate_6502_op(State6502 * state) {
@@ -338,13 +351,13 @@ int emulate_6502_op(State6502 * state) {
 	case SBC_ABSY: unimplemented_instruction(state); break;
 	case SBC_INDX: unimplemented_instruction(state); break;
 	case SBC_INDY: unimplemented_instruction(state); break;
-	case STA_ZP: unimplemented_instruction(state); break;
-	case STA_ZPX: unimplemented_instruction(state); break;
-	case STA_ABS: unimplemented_instruction(state); break;
-	case STA_ABSX: unimplemented_instruction(state); break;
-	case STA_ABSY: unimplemented_instruction(state); break;
-	case STA_INDX:  unimplemented_instruction(state); break;
-	case STA_INDY: unimplemented_instruction(state); break;
+	case STA_ZP: STA(state, get_address_zero_page(state)); break;
+	case STA_ZPX: STA(state, get_address_zero_page_x(state)); break;
+	case STA_ABS: STA(state, get_address_absolute(state)); break;
+	case STA_ABSX: STA(state, get_address_absolute_x(state)); break;
+	case STA_ABSY: STA(state, get_address_absolute_y(state)); break;
+	case STA_INDX: STA(state, get_address_indirect_x(state)); break;
+	case STA_INDY: STA(state, get_address_indirect_y(state)); break;
 	case STX_ZP: STX(state, get_address_zero_page(state)); break;
 	case STX_ZPY: STX(state, get_address_zero_page_y(state)); break;
 	case STX_ABS: STX(state, get_address_absolute(state)); break;
