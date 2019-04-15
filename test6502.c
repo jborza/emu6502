@@ -1064,6 +1064,77 @@ void test_INY() {
 	test_cleanup(&state);
 }
 
+// TXA, TAX, TYA, TAY
+
+void test_TXA() {
+	State6502 state = create_blank_state();
+	state.x = 0xEE;
+
+	char program[] = { TXA };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertA(&state, 0xEE);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_TAX() {
+	State6502 state = create_blank_state();
+	state.a = 0xEE;
+
+	char program[] = { TAX };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertX(&state, 0xEE);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+
+void test_TYA() {
+	State6502 state = create_blank_state();
+	state.y = 0xEE;
+
+	char program[] = { TYA };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertA(&state, 0xEE);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+
+void test_TAY() {
+	State6502 state = create_blank_state();
+	state.a = 0xEE;
+
+	char program[] = { TAY };
+	memcpy(state.memory, program, sizeof(program));
+
+	test_step(&state);
+
+	assertY(&state, 0xEE);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+
+
+
 /////////////////////
 
 typedef void fp();
@@ -1075,6 +1146,7 @@ fp* tests_ldy[] = { test_LDY_IMM, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_
 fp* tests_stx[] = { test_STX_ZP, test_STX_ZPY, test_STX_ABS};
 fp* tests_sty[] = { test_STY_ZP, test_STY_ZPX, test_STY_ABS };
 fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DEY_wraparound, test_INX, test_INX_wraparound, test_INY, test_INY_wraparound};
+fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -1093,4 +1165,5 @@ void run_tests() {
 	RUN(tests_stx);
 	RUN(tests_sty);
 	RUN(tests_inx_iny_dex_dey);
+	RUN(tests_txa_etc);
 }
