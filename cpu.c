@@ -24,6 +24,7 @@ void set_NZ_flags(State6502 * state, byte value) {
 	else {
 		state->flags.z = 1;
 	}
+	printf("setting z flag to %d\n", state->flags.z);
 	//N flag
 	state->flags.n = ((1 << 7) & value) != 0;
 }
@@ -84,6 +85,16 @@ void STY(State6502 * state, word address) {
 	state->memory[address] = state->y;
 }
 
+void INC(State6502 * state, word address) {
+	state->memory[address] += 1;
+	set_NZ_flags(state, state->memory[address]);
+}
+
+void DEC(State6502 * state, word address) {
+	state->memory[address] -= 1;
+	set_NZ_flags(state, state->memory[address]);
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -101,8 +112,7 @@ word get_address_zero_page(State6502 * state) {
 
 byte get_byte_zero_page(State6502 * state) {
 	//8 bit addressing, only the first 256 bytes of the memory
-	byte address = pop_byte(state);
-	return state->memory[address];
+	return state->memory[get_address_zero_page(state)];
 }
 
 word get_address_zero_page_x(State6502 * state) {
@@ -112,8 +122,7 @@ word get_address_zero_page_x(State6502 * state) {
 }
 
 byte get_byte_zero_page_x(State6502 * state) {
-	byte address = pop_byte(state) + state->x;
-	return state->memory[address];
+	return state->memory[get_address_zero_page_x(state)];
 }
 
 word get_address_zero_page_y(State6502 * state) {
@@ -138,16 +147,25 @@ byte get_byte_absolute(State6502 * state)
 	return state->memory[get_address_absolute(state)];
 }
 
-byte get_byte_absolute_x(State6502 * state) {
+word get_address_absolute_x(State6502* state) {
 	//absolute added with the contents of x register
 	word address = pop_word(state) + state->x;
-	return state->memory[address];
+	return address;
+}
+
+byte get_byte_absolute_x(State6502 * state) {
+	return state->memory[get_address_absolute_x(state)];
+}
+
+word get_address_absolute_y(State6502* state) {
+	//absolute added with the contents of x register
+	word address = pop_word(state) + state->y;
+	return address;
 }
 
 byte get_byte_absolute_y(State6502 * state) {
 	//absolute added with the contents of y register
-	word address = pop_word(state) + state->y;
-	return state->memory[address];
+	return state->memory[get_address_absolute_y(state)];
 }
 
 byte get_byte_indirect_x(State6502 * state) {
@@ -243,10 +261,10 @@ int emulate_6502_op(State6502 * state) {
 	case CPY_IMM: unimplemented_instruction(state); break;
 	case CPY_ZP: unimplemented_instruction(state); break;
 	case CPY_ABS: unimplemented_instruction(state); break;
-	case DEC_ZP: unimplemented_instruction(state); break;
-	case DEC_ZPX: unimplemented_instruction(state); break;
-	case DEC_ABS: unimplemented_instruction(state); break;
-	case DEC_ABSX: unimplemented_instruction(state); break;
+	case DEC_ZP: DEC(state, get_address_zero_page(state)); break;
+	case DEC_ZPX: DEC(state, get_address_zero_page_x(state)); break;
+	case DEC_ABS: DEC(state, get_address_absolute(state)); break;
+	case DEC_ABSX: DEC(state, get_address_absolute_x(state)); break;
 	case DEX: state->x -= 1; set_NZ_flags(state, state->x); break;
 	case DEY: state->y -= 1; set_NZ_flags(state, state->y); break;
 	case INX: state->x += 1; set_NZ_flags(state, state->x); break;
@@ -259,10 +277,10 @@ int emulate_6502_op(State6502 * state) {
 	case EOR_ABSY: unimplemented_instruction(state); break;
 	case EOR_INDX: unimplemented_instruction(state); break;
 	case EOR_INDY: unimplemented_instruction(state); break;
-	case INC_ZP: unimplemented_instruction(state); break;
-	case INC_ZPX: unimplemented_instruction(state); break;
-	case INC_ABS: unimplemented_instruction(state); break;
-	case INC_ABSX: unimplemented_instruction(state); break;
+	case INC_ZP: INC(state, get_address_zero_page(state)); break;
+	case INC_ZPX: INC(state, get_address_zero_page_x(state)); break;
+	case INC_ABS: INC(state, get_address_absolute(state)); break;
+	case INC_ABSX: INC(state, get_address_absolute_x(state)); break;
 	case JMP_ABS: unimplemented_instruction(state); break;
 	case JMP_IND: unimplemented_instruction(state); break;
 	case JSR_ABS: unimplemented_instruction(state); break;
