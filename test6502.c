@@ -457,7 +457,7 @@ void test_ORA_INDY() {
 	state.a = 0x0A;
 
 	//arrange
-	char program[] = { ORA_INDY, 0x3E, 0x04, 0xAA }; //ORA ($3E),y
+	char program[] = { ORA_INDY, 0x3E}; //ORA ($3E),y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x3E] = 0xA0; //0x04A0
 	state.memory[0x3F] = 0x04;
@@ -468,6 +468,173 @@ void test_ORA_INDY() {
 
 	//assert	
 	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+//// EOR
+
+void test_EOR_IMM() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_IMM, 0x4F }; //EOR #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	test_cleanup(&state);
+}
+
+void test_EOR_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_ZP, 0x03, 0x00, 0x4F }; //EOR $3
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_ZPX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x01;
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_ZPX, 0x02, 0x00, 0x4F }; //EOR $2,x
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_ABS, 0x01, 0x04 }; //EOR $0401
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x401] = 0x4F;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x02;
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_ABSX, 0x01, 0x04 }; //EOR $0401,x
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0x4F;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x02;
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_ABSY, 0x01, 0x04 }; //EOR $0401,y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x403] = 0x4F;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_INDX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0x05;
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_INDX, 0x3E }; //EOR ($3E, x)
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0043] = 0xA9;
+	state.memory[0x0044] = 0x04;
+	state.memory[0x04A9] = 0x4F;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_EOR_INDY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.y = 0x05;
+	state.a = 0x0F;
+
+	//arrange
+	char program[] = { EOR_INDY, 0x3E }; //EOR ($3E),y
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x3E] = 0xA0; //0x04A0
+	state.memory[0x3F] = 0x04;
+	state.memory[0x04A5] = 0x4F; //address 0x04A0 + 0x05 = 0x04A5
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
 
 	//cleanup
 	test_cleanup(&state);
@@ -624,7 +791,7 @@ void test_AND_INDY() {
 	state.a = 0xAA;
 
 	//arrange
-	char program[] = { AND_INDY, 0x3E, 0x04, 0xAA }; //AND ($3E),y
+	char program[] = { AND_INDY, 0x3E}; //AND ($3E),y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x3E] = 0xA0; //0x04A0
 	state.memory[0x3F] = 0x04;
@@ -1364,6 +1531,8 @@ fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DE
 fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
 fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
+fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
+
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
 void run_suite(fp * *suite, int size) {
@@ -1384,4 +1553,5 @@ void run_tests() {
 	RUN(tests_txa_etc);
 	RUN(tests_inc_dec);
 	RUN(tests_flags);
+	RUN(tests_eor);
 }

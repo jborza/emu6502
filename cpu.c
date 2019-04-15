@@ -95,6 +95,11 @@ void DEC(State6502 * state, word address) {
 	set_NZ_flags(state, state->memory[address]);
 }
 
+void EOR(State6502 * state, byte operand) {
+	state->a = state->a ^ operand;
+	set_NV_flags(state, state->a);
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -147,7 +152,7 @@ byte get_byte_absolute(State6502 * state)
 	return state->memory[get_address_absolute(state)];
 }
 
-word get_address_absolute_x(State6502* state) {
+word get_address_absolute_x(State6502 * state) {
 	//absolute added with the contents of x register
 	word address = pop_word(state) + state->x;
 	return address;
@@ -157,7 +162,7 @@ byte get_byte_absolute_x(State6502 * state) {
 	return state->memory[get_address_absolute_x(state)];
 }
 
-word get_address_absolute_y(State6502* state) {
+word get_address_absolute_y(State6502 * state) {
 	//absolute added with the contents of x register
 	word address = pop_word(state) + state->y;
 	return address;
@@ -269,14 +274,14 @@ int emulate_6502_op(State6502 * state) {
 	case DEY: state->y -= 1; set_NZ_flags(state, state->y); break;
 	case INX: state->x += 1; set_NZ_flags(state, state->x); break;
 	case INY: state->y += 1; set_NZ_flags(state, state->y); break;
-	case EOR_IMM: unimplemented_instruction(state); break;
-	case EOR_ZP: unimplemented_instruction(state); break;
-	case EOR_ZPX: unimplemented_instruction(state); break;
-	case EOR_ABS: unimplemented_instruction(state); break;
-	case EOR_ABSX: unimplemented_instruction(state); break;
-	case EOR_ABSY: unimplemented_instruction(state); break;
-	case EOR_INDX: unimplemented_instruction(state); break;
-	case EOR_INDY: unimplemented_instruction(state); break;
+	case EOR_IMM: EOR(state, pop_byte(state)); break;
+	case EOR_ZP: EOR(state, get_byte_zero_page(state));	break;
+	case EOR_ZPX: EOR(state, get_byte_zero_page_x(state)); break;
+	case EOR_ABS: EOR(state, get_byte_absolute(state)); break;
+	case EOR_ABSX: EOR(state, get_byte_absolute_x(state)); break;
+	case EOR_ABSY: EOR(state, get_byte_absolute_y(state)); break;
+	case EOR_INDX: EOR(state, get_byte_indirect_x(state)); break;
+	case EOR_INDY: EOR(state, get_byte_indirect_y(state)); break;
 	case INC_ZP: INC(state, get_address_zero_page(state)); break;
 	case INC_ZPX: INC(state, get_address_zero_page_x(state)); break;
 	case INC_ABS: INC(state, get_address_absolute(state)); break;
