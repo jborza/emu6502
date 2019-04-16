@@ -1517,6 +1517,152 @@ void test_CLV() {
 	test_cleanup(&state);
 }
 
+//// STA
+
+//// STX
+
+void test_STA_ZP() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+
+	//arrange
+	char program[] = { STA_ZP, 0xFF }; //STA $FF
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0xFF, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_ZPX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.x = 0xA0;
+	state.a = 0x99;
+
+	//arrange
+	char program[] = { STA_ZPX, 0x02 }; //STA $02,X
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0xA2, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_ABS() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+
+	//arrange
+	char program[] = { STA_ABS, 0x01, 0x04 }; //STA $0401
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x401, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_ABSX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+	state.x = 0x05;
+
+	//arrange
+	char program[] = { STA_ABSX, 0x01, 0x04 }; //STA $0401,x
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x406, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_ABSY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+	state.y = 0x05;
+
+	//arrange
+	char program[] = { STA_ABSY, 0x01, 0x04 }; //STA $0401,y
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x406, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_INDX() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+	state.x = 0x05;
+
+	//arrange
+	char program[] = { STA_INDX, 0x3E}; //STA ($3E,x)
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x43] = 0x01;
+	state.memory[0x44] = 0x04;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x401, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_STA_INDY() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+	state.y = 0x05;
+
+	//arrange
+	char program[] = { STA_INDY, 0x3E }; //STA ($3E),y
+	state.memory[0x3E] = 0xA0;
+	state.memory[0x3F] = 0x04;
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x4A5, 0x99);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -1532,6 +1678,7 @@ fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
 fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
+fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -1554,4 +1701,5 @@ void run_tests() {
 	RUN(tests_inc_dec);
 	RUN(tests_flags);
 	RUN(tests_eor);
+	RUN(tests_sta);
 }
