@@ -24,13 +24,19 @@ void set_NZ_flags(State6502 * state, byte value) {
 	else {
 		state->flags.z = 1;
 	}
-	printf("setting z flag to %d\n", state->flags.z);
 	//N flag
 	state->flags.n = ((1 << 7) & value) != 0;
 }
 
 void clear_flags(State6502 * state) {
-	memcpy(&state->flags, &state->a, 1);
+	state->flags.b =
+		state->flags.c =
+		state->flags.d =
+		state->flags.i =
+		state->flags.n =
+		state->flags.v =
+		state->flags.z = 0;
+	state->flags.pad = 1; //unused is supposed to be 1
 }
 
 void clear_state(State6502 * state) {
@@ -45,6 +51,16 @@ void clear_state(State6502 * state) {
 
 byte pop_byte(State6502 * state) {
 	return state->memory[state->pc++];
+}
+
+void push_byte_to_stack(State6502 * state, byte value) {
+	//stack located between $0100 to $01FF
+	state->memory[STACK_HOME + state->sp--] = value;
+}
+
+byte pop_byte_from_stack(State6502 * state) {
+	return state->memory[STACK_HOME + state->sp++];
+	state->sp++;
 }
 
 //bitwise or with accumulator
@@ -246,25 +262,30 @@ int emulate_6502_op(State6502 * state) {
 	case CLI: state->flags.i = 0; break;
 	case CLV: state->flags.v = 0; break;
 	case NOP: break; //NOP
-	case PHA: unimplemented_instruction(state); break;
-	case PLA: unimplemented_instruction(state); break;
-	case PHP: //push processor status
-		//push(state->flags);
-		unimplemented_instruction(state); break;
-	case PLP: //pull procesor status 
-		//state->flags = pop();
-		unimplemented_instruction(state); break;
+	case PHA: push_byte_to_stack(state, state->a); break; //push accumulator to stack
+	case PLA: state->a = pop_byte_from_stack(state); break; //pull accumulator from stack
+	case PHP: {
+		byte flags_value;
+		memcpy(&flags_value, &state->flags, sizeof(Flags));
+		push_byte_to_stack(state, flags_value);
+		break; //push processor status
+	}
+	case PLP: {
+		byte value = pop_byte_from_stack(state);
+		memset(&state->flags, value, 1);
+		break;
+	}//pull procesor status 
 	case RTI: unimplemented_instruction(state); break;
 	case RTS: unimplemented_instruction(state); break;
 	case SEC: state->flags.c = 1; break;
 	case SED: state->flags.d = 1; break;
 	case SEI: state->flags.i = 1; break;
-	case TAX: state->x = state->a; set_NZ_flags(state, state->x); break; //TODO test
-	case TXA: state->a = state->x; set_NZ_flags(state, state->a); break; //TODO test
-	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break; //TODO test
-	case TYA: state->a = state->y; set_NZ_flags(state, state->a);  break; //TODO test
-	case TSX: unimplemented_instruction(state); break;
-	case TXS: unimplemented_instruction(state); break;
+	case TAX: state->x = state->a; set_NZ_flags(state, state->x); break;
+	case TXA: state->a = state->x; set_NZ_flags(state, state->a); break;
+	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break;
+	case TYA: state->a = state->y; set_NZ_flags(state, state->a);  break;
+	case TSX: state->x = state->sp; set_NZ_flags(state, state->x); break; //TODO test
+	case TXS: state->sp = state->x; set_NZ_flags(state, state->x); break; //TODO test
 	case CMP_IMM: unimplemented_instruction(state); break;
 	case CMP_ZP: unimplemented_instruction(state); break;
 	case CMP_ZPX: unimplemented_instruction(state); break;

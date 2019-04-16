@@ -54,25 +54,27 @@ State6502 create_blank_state() {
 	return state;
 }
 
-void assertA(State6502 * state, byte expected) {
-	if (state->a != expected) {
-		printf("Unexpected value in A, expected %02X, was %02X", expected, state->a);
+void assert_register(State6502* state, byte expected, byte actual, char* name) {
+	if (actual != expected) {
+		printf("Unexpected value in %s, expected %02X, was %02X", name, expected, actual);
 		exit(1);
 	}
+}
+
+void assertA(State6502 * state, byte expected) {
+	assert_register(state, expected, state->a, "A");
 }
 
 void assertX(State6502 * state, byte expected) {
-	if (state->x != expected) {
-		printf("Unexpected value in X, expected %02X, was %02X", expected, state->x);
-		exit(1);
-	}
+	assert_register(state, expected, state->x, "X");
 }
 
 void assertY(State6502 * state, byte expected) {
-	if (state->y != expected) {
-		printf("Unexpected value in X, expected %02X, was %02X", expected, state->y);
-		exit(1);
-	}
+	assert_register(state, expected, state->y, "Y");
+}
+
+void assert_sp(State6502* state, byte expected) {
+	assert_register(state, expected, state->sp, "SP");
 }
 
 //assert_memory(&state, 0xFF, 0x99)
@@ -1519,8 +1521,6 @@ void test_CLV() {
 
 //// STA
 
-//// STX
-
 void test_STA_ZP() {
 	//initialize
 	State6502 state = create_blank_state();
@@ -1663,6 +1663,124 @@ void test_STA_INDY() {
 	test_cleanup(&state);
 }
 
+// PH, PL
+
+void test_PHA() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x99;
+	state.sp = 0xFF;
+
+	//arrange
+	char program[] = { PHA }; 
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_memory(&state, 0x1FF, 0x99);
+	assert_sp(&state, 0xFE);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PLA() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.sp = 0xFE;
+	state.memory[0x1FE] = 0xBB;
+
+	//arrange
+	char program[] = { PLA };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xBB);
+	assert_sp(&state, 0xFF);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PHA_PLA() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDX_IMM, 0xFF, TXS, LDA_IMM, 0xAA, PHA, LDY_IMM, 0xBB, TYA, PHA, TXA, PHA }; 
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	for (int i = 0; i < 9; i++) {
+		disassemble_6502(state.memory, state.pc);
+		emulate_6502_op(&state);
+	}
+
+	//assert	
+	assert_memory(&state, 0x1FF, 0xAA);
+	assert_memory(&state, 0x1FE, 0xBB);
+	assert_memory(&state, 0x1FD, 0xFF);
+	assert_sp(&state, 0xFC);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+//// TXS, TSX, TYS, TSY
+
+void test_TXS() {
+	State6502 state = create_blank_state();
+	state.x = 0xAA;
+	char program[] = { TXS };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_sp(&state, 0xAA);
+
+	test_cleanup(&state);
+}
+
+void test_TSX() {
+	State6502 state = create_blank_state();
+	state.sp = 0xBB;
+	char program[] = { TSX };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assertX(&state, 0xBB);
+
+	test_cleanup(&state);
+}
+
+void test_TYS() {
+	State6502 state = create_blank_state();
+	state.y = 0xAA;
+	char program[] = { TYS };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_sp(&state, 0xAA);
+
+	test_cleanup(&state);
+}
+
+void test_TSY() {
+	State6502 state = create_blank_state();
+	state.sp = 0xBB;
+	char program[] = { TSY };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assertY(&state, 0xBB);
+
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -1679,6 +1797,8 @@ fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_wraparound, test_INC_ZPX, test_
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
+fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
+fp* tests_txs_etc[] = { test_TXS, test_TSX, test_TYS, test_TSY };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -1702,4 +1822,6 @@ void run_tests() {
 	RUN(tests_flags);
 	RUN(tests_eor);
 	RUN(tests_sta);
+	RUN(tests_pha_pla);
+	RUN(tests_txs_tsx);
 }

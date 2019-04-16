@@ -25,6 +25,11 @@ int main()
 	return 0;
 }
 
+void emulate_game() {
+	FILE* file = fopen("..\\bins\\tetris.bin", "r");
+
+}
+
 //void emulate() {
 //	State6502 state;
 //	memset(&state.memory, 0, sizeof(State6502));
