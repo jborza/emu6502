@@ -1757,30 +1757,6 @@ void test_TSX() {
 	test_cleanup(&state);
 }
 
-void test_TYS() {
-	State6502 state = create_blank_state();
-	state.y = 0xAA;
-	char program[] = { TYS };
-	memcpy(state.memory, program, sizeof(program));
-	test_step(&state);
-
-	assert_sp(&state, 0xAA);
-
-	test_cleanup(&state);
-}
-
-void test_TSY() {
-	State6502 state = create_blank_state();
-	state.sp = 0xBB;
-	char program[] = { TSY };
-	memcpy(state.memory, program, sizeof(program));
-	test_step(&state);
-
-	assertY(&state, 0xBB);
-
-	test_cleanup(&state);
-}
-
 /////////////////////
 
 typedef void fp();
@@ -1798,7 +1774,7 @@ fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
-fp* tests_txs_etc[] = { test_TXS, test_TSX, test_TYS, test_TSY };
+fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
