@@ -120,6 +120,10 @@ void EOR(State6502 * state, byte operand) {
 	set_NV_flags(state, state->a);
 }
 
+void JMP(State6502 * state, word address) {
+	state->pc = address;
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -191,6 +195,18 @@ word get_address_absolute_y(State6502 * state) {
 byte get_byte_absolute_y(State6502 * state) {
 	//absolute added with the contents of y register
 	return state->memory[get_address_absolute_y(state)];
+}
+
+word get_address_indirect_jmp(State6502 * state) {
+	//AN INDIRECT JUMP MUST NEVER USE A	VECTOR BEGINNING ON THE LAST BYTE OF A PAGE
+	word indirect_address = pop_word(state); 
+	if ((indirect_address & 0xFF) == 0xFF) {
+		//avoid crossing the page boundary
+		return state->memory[indirect_address] | state->memory[indirect_address + 1 - 0xFF] << 8;
+	}
+	else {
+		return read_word(state, indirect_address);
+	}
 }
 
 word get_address_indirect_x(State6502 * state) {
@@ -320,8 +336,8 @@ int emulate_6502_op(State6502 * state) {
 	case INC_ZPX: INC(state, get_address_zero_page_x(state)); break;
 	case INC_ABS: INC(state, get_address_absolute(state)); break;
 	case INC_ABSX: INC(state, get_address_absolute_x(state)); break;
-	case JMP_ABS: unimplemented_instruction(state); break;
-	case JMP_IND: unimplemented_instruction(state); break;
+	case JMP_ABS: JMP(state, get_address_absolute(state)); break;
+	case JMP_IND: JMP(state, get_address_indirect_jmp(state)); break;
 	case JSR_ABS: unimplemented_instruction(state); break;
 	case LDA_IMM: LDA(state, pop_byte(state)); break;
 	case LDA_ZP: LDA(state, get_byte_zero_page(state));	break;

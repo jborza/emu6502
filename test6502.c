@@ -54,7 +54,7 @@ State6502 create_blank_state() {
 	return state;
 }
 
-void assert_register(State6502* state, byte expected, byte actual, char* name) {
+void assert_register(State6502 * state, byte expected, byte actual, char* name) {
 	if (actual != expected) {
 		printf("Unexpected value in %s, expected %02X, was %02X", name, expected, actual);
 		exit(1);
@@ -73,8 +73,15 @@ void assertY(State6502 * state, byte expected) {
 	assert_register(state, expected, state->y, "Y");
 }
 
-void assert_sp(State6502* state, byte expected) {
+void assert_sp(State6502 * state, byte expected) {
 	assert_register(state, expected, state->sp, "SP");
+}
+
+void assert_pc(State6502 * state, word expected) {
+	if (state->pc != expected) {
+		printf("Unexpected value in SP, expected %02X, was %02X", expected, state->pc);
+		exit(1);
+	}
 }
 
 //assert_memory(&state, 0xFF, 0x99)
@@ -99,28 +106,35 @@ void assert_flag_z(State6502 * state, byte expected) {
 	}
 }
 
-void assert_flag_c(State6502* state, byte expected) {
+void assert_flag_c(State6502 * state, byte expected) {
 	if (state->flags.c != expected) {
 		printf("Unexpected value in flag C, expected %d, was %d", expected, state->flags.c);
 		exit(1);
 	}
 }
 
-void assert_flag_i(State6502* state, byte expected) {
+void assert_flag_i(State6502 * state, byte expected) {
 	if (state->flags.i != expected) {
 		printf("Unexpected value in flag I, expected %d, was %d", expected, state->flags.i);
 		exit(1);
 	}
 }
 
-void assert_flag_d(State6502* state, byte expected) {
+void assert_flag_d(State6502 * state, byte expected) {
 	if (state->flags.d != expected) {
 		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.d);
 		exit(1);
 	}
 }
 
-void assert_flag_v(State6502* state, byte expected) {
+void assert_flag_v(State6502 * state, byte expected) {
+	if (state->flags.v != expected) {
+		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.v);
+		exit(1);
+	}
+}
+
+void assert_flag_b(State6502* state, byte expected) {
 	if (state->flags.v != expected) {
 		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.v);
 		exit(1);
@@ -459,7 +473,7 @@ void test_ORA_INDY() {
 	state.a = 0x0A;
 
 	//arrange
-	char program[] = { ORA_INDY, 0x3E}; //ORA ($3E),y
+	char program[] = { ORA_INDY, 0x3E }; //ORA ($3E),y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x3E] = 0xA0; //0x04A0
 	state.memory[0x3F] = 0x04;
@@ -793,7 +807,7 @@ void test_AND_INDY() {
 	state.a = 0xAA;
 
 	//arrange
-	char program[] = { AND_INDY, 0x3E}; //AND ($3E),y
+	char program[] = { AND_INDY, 0x3E }; //AND ($3E),y
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x3E] = 0xA0; //0x04A0
 	state.memory[0x3F] = 0x04;
@@ -1437,7 +1451,7 @@ void test_DEC_ZP_wraparound() {
 
 void test_SEC() {
 	State6502 state = create_blank_state();
-	
+
 	char program[] = { SEC };
 	memcpy(state.memory, program, sizeof(program));
 	test_step(&state);
@@ -1626,7 +1640,7 @@ void test_STA_INDX() {
 	state.x = 0x05;
 
 	//arrange
-	char program[] = { STA_INDX, 0x3E}; //STA ($3E,x)
+	char program[] = { STA_INDX, 0x3E }; //STA ($3E,x)
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x43] = 0x01;
 	state.memory[0x44] = 0x04;
@@ -1672,7 +1686,7 @@ void test_PHA() {
 	state.sp = 0xFF;
 
 	//arrange
-	char program[] = { PHA }; 
+	char program[] = { PHA };
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
@@ -1712,7 +1726,7 @@ void test_PHA_PLA() {
 	State6502 state = create_blank_state();
 
 	//arrange
-	char program[] = { LDX_IMM, 0xFF, TXS, LDA_IMM, 0xAA, PHA, LDY_IMM, 0xBB, TYA, PHA, TXA, PHA }; 
+	char program[] = { LDX_IMM, 0xFF, TXS, LDA_IMM, 0xAA, PHA, LDY_IMM, 0xBB, TYA, PHA, TXA, PHA };
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
@@ -1757,6 +1771,124 @@ void test_TSX() {
 	test_cleanup(&state);
 }
 
+// PHP, PLP
+
+void test_PHP() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.flags.c = 1;
+	state.flags.b = 1;
+	state.flags.z = 1;
+	state.flags.n = 1;
+	state.flags.d = 1;
+	state.flags.i = 1;
+	state.flags.v = 1;
+	state.sp = 0xFF;
+
+	//arrange
+	char program[] = { PHP };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_sp(&state, 0xFE);
+	assert_memory(&state, 0x1FF, 0xFF);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PLP() {
+	State6502 state = create_blank_state();
+	state.sp = 0xFE;
+
+	//arrange
+	char program[] = { PLP };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_sp(&state, 0xFF);
+	assert_flag_c(&state, 1);
+	assert_flag_d(&state, 1);
+	assert_flag_b(&state, 1);
+	assert_flag_z(&state, 1);
+	assert_flag_v(&state, 1);
+	assert_flag_n(&state, 1);
+	assert_flag_i(&state, 1);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+//// JMP
+
+void test_JMP() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { JMP_ABS, 0x04, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_pc(&state, 0x0304);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_JMP_IND() {
+	//initialize 
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { JMP_IND, 0xFF, 0x02 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x02FF] = 0x01;
+	state.memory[0x0200] = 0xAA;
+	state.memory[0x01AA] = 0xFF; //target
+	//NOT state.memory[0x03FF] ! as there is no wrap
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_pc(&state, 0x1AA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_JMP_IND_wrap() {
+	//initialize 
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { JMP_IND, 0xFF, 0x02 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x02FF] = 0x01;
+	state.memory[0x0200] = 0xAA;
+	state.memory[0x01AA] = 0xFF; //target
+	//NOT state.memory[0x03FF] ! as there is no wrap
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_pc(&state, 0x1AA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -1775,6 +1907,8 @@ fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };
+fp* tests_php_plp[] = { test_PHP, test_PLP };
+fp* tests_jmp[] = { test_JMP, test_JMP_IND };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -1800,4 +1934,6 @@ void run_tests() {
 	RUN(tests_sta);
 	RUN(tests_pha_pla);
 	RUN(tests_txs_tsx);
+	RUN(tests_jmp);
+	RUN(tests_php_plp);
 }
