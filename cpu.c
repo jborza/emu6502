@@ -181,6 +181,23 @@ void ASL_MEM(State6502* state, word address) {
 	state->memory[address] = asl(state, operand);
 }
 
+byte lsr(State6502* state, byte operand) {
+	byte result = operand >> 1;
+	state->flags.c = (operand & 0x01) != 0;
+	set_NV_flags(state, result);
+	return result;
+}
+
+void LSR_A(State6502* state) {
+	state->a = lsr(state, state->a);
+}
+
+void LSR_MEM(State6502* state, word address) {
+	byte operand = state->memory[address];
+	state->memory[address] = operand;
+	state->memory[address] = lsr(state, operand);
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -414,11 +431,11 @@ int emulate_6502_op(State6502 * state) {
 	case LDY_ZPX: LDY(state, get_byte_zero_page_x(state)); break;
 	case LDY_ABS: LDY(state, get_byte_absolute(state)); break;
 	case LDY_ABSX: LDY(state, get_byte_absolute_x(state)); break;
-	case LSR_ACC: unimplemented_instruction(state); break;
-	case LSR_ZP: unimplemented_instruction(state); break;
-	case LSR_ZPX: unimplemented_instruction(state); break;
-	case LSR_ABS: unimplemented_instruction(state); break;
-	case LSR_ABSX: unimplemented_instruction(state); break;
+	case LSR_ACC: LSR_A(state);  break;
+	case LSR_ZP: LSR_MEM(state, get_address_zero_page(state)); break;
+	case LSR_ZPX: LSR_MEM(state, get_address_zero_page_x(state)); break;
+	case LSR_ABS: LSR_MEM(state, get_address_absolute(state)); break;
+	case LSR_ABSX: LSR_MEM(state, get_address_absolute_x(state)); break;
 	case ORA_IMM: ORA(state, pop_byte(state)); break;
 	case ORA_ZP: ORA(state, get_byte_zero_page(state));	break;
 	case ORA_ZPX: ORA(state, get_byte_zero_page_x(state)); break;
