@@ -194,8 +194,28 @@ void LSR_A(State6502* state) {
 
 void LSR_MEM(State6502* state, word address) {
 	byte operand = state->memory[address];
-	state->memory[address] = operand;
 	state->memory[address] = lsr(state, operand);
+}
+
+byte ror(State6502* state, byte operand) {
+	//TODO implement
+}
+
+byte rol(State6502* state, byte operand) {
+	word result_word = (operand << 1) | state->flags.c;
+	state->flags.c = result_word > 0xFF;
+	byte result = result_word & 0xFF;
+	set_NV_flags(state, result);
+	return result;
+}
+
+void ROL_A(State6502* state) {
+	state->a = rol(state, state->a);
+}
+
+void ROL_MEM(State6502* state, word address) {
+	byte operand = state->memory[address];
+	state->memory[address] = rol(state, operand);
 }
 
 word pop_word(State6502 * state) {
@@ -444,11 +464,11 @@ int emulate_6502_op(State6502 * state) {
 	case ORA_ABSY: ORA(state, get_byte_absolute_y(state)); break;
 	case ORA_INDX: ORA(state, get_byte_indirect_x(state)); break;
 	case ORA_INDY: ORA(state, get_byte_indirect_y(state)); break;
-	case ROL_ACC: unimplemented_instruction(state); break;
-	case ROL_ZP: unimplemented_instruction(state); break;
-	case ROL_ZPX: unimplemented_instruction(state); break;
-	case ROL_ABS: unimplemented_instruction(state); break;
-	case ROL_ABSX: unimplemented_instruction(state); break;
+	case ROL_ACC: ROL_A(state); break;
+	case ROL_ZP: ROL_MEM(state, get_address_zero_page(state)); break;
+	case ROL_ZPX: ROL_MEM(state, get_address_zero_page_x(state)); break;
+	case ROL_ABS: ROL_MEM(state, get_address_absolute(state)); break;
+	case ROL_ABSX: ROL_MEM(state, get_address_absolute_x(state)); break;
 	case ROR_ACC: unimplemented_instruction(state); break;
 	case ROR_ZP: unimplemented_instruction(state); break;
 	case ROR_ZPX: unimplemented_instruction(state); break;
