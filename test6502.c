@@ -1933,7 +1933,6 @@ void test_CMP_ABS_greater_2() {
 	test_cleanup(&state);
 }
 
-
 void test_CMP_ABS_less_than() {
 	State6502 state = create_blank_state();
 	state.a = 0x08;
@@ -1946,6 +1945,41 @@ void test_CMP_ABS_less_than() {
 	assert_flag_z(&state, 0x00);
 	assert_flag_n(&state, 0x01);
 	assert_flag_c(&state, 0x00);
+
+	test_cleanup(&state);
+}
+
+// CPX, CPY
+void test_CPX_ABS() {
+	State6502 state = create_blank_state();
+	state.x = 0x82;
+	state.flags.n = 1;
+
+	char program[] = { CPX_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x00); // 0x82 != 0x1A
+	assert_flag_n(&state, 0x00);
+	assert_flag_c(&state, 0x01); // 0x82 > 0x1A
+
+	test_cleanup(&state);
+}
+
+void test_CPY_ABS() {
+	State6502 state = create_blank_state();
+	state.y = 0x82;
+	state.flags.n = 1;
+
+	char program[] = { CPY_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x00); // 0x82 != 0x1A
+	assert_flag_n(&state, 0x00);
+	assert_flag_c(&state, 0x01); // 0x82 > 0x1A
 
 	test_cleanup(&state);
 }
@@ -1970,7 +2004,7 @@ fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 fp* tests_php_plp[] = { test_PHP, test_PLP };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
-fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than };
+fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
