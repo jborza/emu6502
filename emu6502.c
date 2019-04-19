@@ -12,22 +12,31 @@
 
 byte* read_game() {
 	FILE* file = fopen("..\\bins\\tetris.bin", "r");
-	byte* buffer = malloc(0x800);
-	fread(buffer, 1, 0x800, file);
+	//byte* buffer = malloc(0x800);
+	byte buffer[32];
+	int read = fread(&buffer, sizeof(byte), 32, file);
 	fclose(file);
 	return buffer;
 }
 
+
+
+void emulate_game() {
+	State6502 state;
+	//FILE* file = fopen("..\\bins\\tetris.bin", "r");
+	clear_state(&state);
+	state.memory = read_game();
+	for (int i = 0; i < 100; i++) {
+		disassemble_6502(state.memory, i);
+	}
+}
+
 int main()
-{ 
+{
+	//emulate_game();
 	run_tests();
 	printf("All tests succeeded.\n");
 	return 0;
-}
-
-void emulate_game() {
-	FILE* file = fopen("..\\bins\\tetris.bin", "r");
-
 }
 
 //void emulate() {

@@ -1984,6 +1984,45 @@ void test_CPY_ABS() {
 	test_cleanup(&state);
 }
 
+//// SBC
+
+void test_SBC_IMM() {
+	State6502 state = create_blank_state();
+	state.a = 0x08;
+
+	char program[] = { SBC_IMM, 0x06};
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assertA(&state, 0x02);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 0);
+	assert_flag_c(&state, 1);
+	assert_flag_v(&state, 0);
+
+	test_cleanup(&state);
+}
+
+void test_SBC_IMM_carry() {
+	State6502 state = create_blank_state();
+	state.a = 0x40;
+	state.flags.c = 1;
+
+	char program[] = { SBC_IMM, 0x60 };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	//0x100 + 0x40 - 0x60 = 0xE0
+	assertA(&state, 0xE0);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 0);
+	assert_flag_c(&state, 1);
+	assert_flag_v(&state, 0);
+
+	test_cleanup(&state);
+}
+
+
 /////////////////////
 
 typedef void fp();
@@ -2005,6 +2044,7 @@ fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 fp* tests_php_plp[] = { test_PHP, test_PLP };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
+fp* tests_sbc[] = { test_SBC_IMM };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2014,6 +2054,7 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_sbc);
 	RUN(tests_lda);
 	RUN(tests_ora);
 	RUN(tests_and);

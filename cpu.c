@@ -127,6 +127,22 @@ void JMP(State6502 * state, word address) {
 	state->pc = address;
 }
 
+void SBC(State6502* state, byte operand) {
+	//subtract operand from A
+	word operand_word = operand;
+	//borrow 0x100 from the carry flag if set
+	if (state->flags.c == 1) {
+		operand_word += 0x100;
+		state->flags.c = 0;
+	}
+	word result = state->a - operand_word;
+
+	state->a -= result;
+	state->flags.n = is_negative(state->a);
+	state->flags.z = state->a == 0;
+	//state->flags.v = ??? ; //
+}
+
 void cmp_internal(State6502 * state, byte register_value, byte operand) {
 	//set carry flag if A >= M
 	state->flags.c = register_value >= operand;
@@ -146,6 +162,23 @@ void CPX(State6502 * state, byte operand) {
 
 void CPY(State6502 * state, byte operand) {
 	cmp_internal(state, state->y, operand);
+}
+
+byte asl(State6502* state, byte operand) {
+	byte result = operand << 1;
+	state->flags.c = operand > 0x80;
+	set_NV_flags(state, result);
+	return result;
+}
+
+void ASL_A(State6502* state) {
+	state->a = asl(state, state->a);
+}
+
+void ASL_MEM(State6502* state, word address) {
+	byte operand = state->memory[address];
+	state->memory[address] = operand;
+	state->memory[address] = asl(state, operand);
 }
 
 word pop_word(State6502 * state) {
@@ -279,11 +312,11 @@ int emulate_6502_op(State6502 * state) {
 	case AND_ABSY: AND(state, get_byte_absolute_y(state)); break;
 	case AND_INDX: AND(state, get_byte_indirect_x(state)); break;
 	case AND_INDY: AND(state, get_byte_indirect_y(state)); break;
-	case ASL_ACC: unimplemented_instruction(state); break;
-	case ASL_ZP: unimplemented_instruction(state); break;
-	case ASL_ZPX: unimplemented_instruction(state); break;
-	case ASL_ABS: unimplemented_instruction(state); break;
-	case ASL_ABSX: unimplemented_instruction(state); break;
+	case ASL_ACC: ASL_A(state); break;
+	case ASL_ZP: ASL_MEM(state, get_address_zero_page(state)); break;
+	case ASL_ZPX: ASL_MEM(state, get_address_zero_page_x(state)); break;
+	case ASL_ABS: ASL_MEM(state, get_address_absolute(state)); break;
+	case ASL_ABSX: ASL_MEM(state, get_address_absolute_x(state)); break;
 	case BCC_REL: unimplemented_instruction(state); break;
 	case BCS_REL: unimplemented_instruction(state); break;
 	case BEQ_REL: unimplemented_instruction(state); break;
@@ -404,14 +437,14 @@ int emulate_6502_op(State6502 * state) {
 	case ROR_ZPX: unimplemented_instruction(state); break;
 	case ROR_ABS: unimplemented_instruction(state); break;
 	case ROR_ABSX: unimplemented_instruction(state); break;
-	case SBC_IMM: unimplemented_instruction(state); break;
-	case SBC_ZP: unimplemented_instruction(state); break;
-	case SBC_ZPX: unimplemented_instruction(state); break;
-	case SBC_ABS: unimplemented_instruction(state); break;
-	case SBC_ABSX: unimplemented_instruction(state); break;
-	case SBC_ABSY: unimplemented_instruction(state); break;
-	case SBC_INDX: unimplemented_instruction(state); break;
-	case SBC_INDY: unimplemented_instruction(state); break;
+	case SBC_IMM: SBC(state, pop_byte(state)); break;
+	case SBC_ZP: SBC(state, get_byte_zero_page(state)); break;
+	case SBC_ZPX: SBC(state, get_byte_zero_page_x(state)); break;
+	case SBC_ABS: SBC(state, get_byte_absolute(state)); break;
+	case SBC_ABSX: SBC(state, get_byte_absolute_x(state)); break;
+	case SBC_ABSY: SBC(state, get_byte_absolute_y(state)); break;
+	case SBC_INDX: SBC(state, get_byte_indirect_x(state)); break;
+	case SBC_INDY: SBC(state, get_byte_indirect_y(state)); break;
 	case STA_ZP: STA(state, get_address_zero_page(state)); break;
 	case STA_ZPX: STA(state, get_address_zero_page_x(state)); break;
 	case STA_ABS: STA(state, get_address_absolute(state)); break;
