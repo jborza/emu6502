@@ -7,7 +7,9 @@
 #include "state.h"
 #include "disassembler.h"
 #include "cpu.h"
-
+#ifdef _DEBUG
+#include <signal.h>
+#endif
 
 void print_state(State6502* state) {
 	printf("\tC=%d,Z=%d,I=%d,D=%d,B=%d,V=%d,N=%d\n", state->flags.c, state->flags.z, state->flags.i, state->flags.d, state->flags.b, state->flags.v, state->flags.n);
@@ -54,10 +56,17 @@ State6502 create_blank_state() {
 	return state;
 }
 
+void exit_or_break() {
+#ifdef _DEBUG
+	raise(SIGINT);
+#endif
+	exit(1);
+}
+
 void assert_register(State6502 * state, byte expected, byte actual, char* name) {
 	if (actual != expected) {
 		printf("Unexpected value in %s, expected %02X, was %02X", name, expected, actual);
-		exit(1);
+		exit_or_break();
 	}
 }
 
@@ -80,7 +89,7 @@ void assert_sp(State6502 * state, byte expected) {
 void assert_pc(State6502 * state, word expected) {
 	if (state->pc != expected) {
 		printf("Unexpected value in SP, expected %02X, was %02X", expected, state->pc);
-		exit(1);
+		exit_or_break();
 	}
 }
 
@@ -88,57 +97,43 @@ void assert_pc(State6502 * state, word expected) {
 void assert_memory(State6502 * state, word address, byte expected) {
 	if (state->memory[address] != expected) {
 		printf("Unexpected value in $%04X, expected %02X, was %02X", address, expected, state->memory[address]);
-		exit(1);
+		exit_or_break();
+	}
+}
+
+void assert_flag(byte flag_value, byte expected, char* flag_name) {
+	if (flag_value != expected) {
+		printf("Unexpected value in flag %s, expected %d, was %d", flag_name, expected, flag_value);
+		exit_or_break();
 	}
 }
 
 void assert_flag_n(State6502 * state, byte expected) {
-	if (state->flags.n != expected) {
-		printf("Unexpected value in flag N, expected %d, was %d", expected, state->flags.n);
-		exit(1);
-	}
+	assert_flag(state->flags.n, expected, "N");
 }
 
 void assert_flag_z(State6502 * state, byte expected) {
-	if (state->flags.z != expected) {
-		printf("Unexpected value in flag Z, expected %d, was %d", expected, state->flags.z);
-		exit(1);
-	}
+	assert_flag(state->flags.z, expected, "Z");
 }
 
 void assert_flag_c(State6502 * state, byte expected) {
-	if (state->flags.c != expected) {
-		printf("Unexpected value in flag C, expected %d, was %d", expected, state->flags.c);
-		exit(1);
-	}
+	assert_flag(state->flags.c, expected, "C");
 }
 
 void assert_flag_i(State6502 * state, byte expected) {
-	if (state->flags.i != expected) {
-		printf("Unexpected value in flag I, expected %d, was %d", expected, state->flags.i);
-		exit(1);
-	}
+	assert_flag(state->flags.i, expected, "I");
 }
 
 void assert_flag_d(State6502 * state, byte expected) {
-	if (state->flags.d != expected) {
-		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.d);
-		exit(1);
-	}
+	assert_flag(state->flags.d, expected, "D");
 }
 
 void assert_flag_v(State6502 * state, byte expected) {
-	if (state->flags.v != expected) {
-		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.v);
-		exit(1);
-	}
+	assert_flag(state->flags.v, expected, "V");
 }
 
-void assert_flag_b(State6502* state, byte expected) {
-	if (state->flags.v != expected) {
-		printf("Unexpected value in flag D, expected %d, was %d", expected, state->flags.v);
-		exit(1);
-	}
+void assert_flag_b(State6502 * state, byte expected) {
+	assert_flag(state->flags.b, expected, "B");
 }
 ////////////////////////////////////////
 
@@ -1704,7 +1699,7 @@ void test_PLA() {
 	//initialize
 	State6502 state = create_blank_state();
 	state.sp = 0xFE;
-	state.memory[0x1FE] = 0xBB;
+	state.memory[0x1FF] = 0xBB;
 
 	//arrange
 	char program[] = { PLA };
@@ -1807,6 +1802,7 @@ void test_PLP() {
 	//arrange
 	char program[] = { PLP };
 	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x1FF] = 0xFF; //all flags should be on
 
 	//act
 	test_step(&state);
@@ -1850,18 +1846,16 @@ void test_JMP_IND() {
 	State6502 state = create_blank_state();
 
 	//arrange
-	char program[] = { JMP_IND, 0xFF, 0x02 };
+	char program[] = { JMP_IND, 0x04, 0x02 };
 	memcpy(state.memory, program, sizeof(program));
-	state.memory[0x02FF] = 0x01;
-	state.memory[0x0200] = 0xAA;
-	state.memory[0x01AA] = 0xFF; //target
-	//NOT state.memory[0x03FF] ! as there is no wrap
+	state.memory[0x0204] = 0xAA;
+	state.memory[0x0205] = 0x01;
 
 	//act
 	test_step(&state);
 
 	//assert	
-	assert_pc(&state, 0x1AA);
+	assert_pc(&state, 0x01AA);
 
 	//cleanup
 	test_cleanup(&state);
@@ -1874,10 +1868,9 @@ void test_JMP_IND_wrap() {
 	//arrange
 	char program[] = { JMP_IND, 0xFF, 0x02 };
 	memcpy(state.memory, program, sizeof(program));
-	state.memory[0x02FF] = 0x01;
-	state.memory[0x0200] = 0xAA;
-	state.memory[0x01AA] = 0xFF; //target
-	//NOT state.memory[0x03FF] ! as there is no wrap
+	state.memory[0x02FF] = 0xAA;
+	state.memory[0x0200] = 0x01;
+	state.memory[0x0300] = 0xFF; //NOT this one!
 
 	//act
 	test_step(&state);
@@ -1886,6 +1879,74 @@ void test_JMP_IND_wrap() {
 	assert_pc(&state, 0x1AA);
 
 	//cleanup
+	test_cleanup(&state);
+}
+
+// CMP, CPX, CPY
+
+void test_CMP_ABS_equal() {
+	State6502 state = create_blank_state();
+	state.a = 0x1A;
+
+	char program[] = { CMP_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x01);
+	assert_flag_n(&state, 0x00);
+	assert_flag_c(&state, 0x01);
+
+	test_cleanup(&state);
+}
+
+void test_CMP_ABS_greater() {
+	State6502 state = create_blank_state();
+	state.a = 0x30;
+
+	char program[] = { CMP_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x00);
+	assert_flag_n(&state, 0x00);
+	assert_flag_c(&state, 0x01); //as A > memory
+
+	test_cleanup(&state);
+}
+
+void test_CMP_ABS_greater_2() {
+	State6502 state = create_blank_state();
+	state.a = 0x82;
+	state.flags.n = 1;
+
+	char program[] = { CMP_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x00); // 0x82 != 0x1A
+	assert_flag_n(&state, 0x00); 
+	assert_flag_c(&state, 0x01); // 0x82 > 0x1A
+
+	test_cleanup(&state);
+}
+
+
+void test_CMP_ABS_less_than() {
+	State6502 state = create_blank_state();
+	state.a = 0x08;
+
+	char program[] = { CMP_ABS, 0x45, 0x03 };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0x1A;
+	test_step(&state);
+
+	assert_flag_z(&state, 0x00);
+	assert_flag_n(&state, 0x01);
+	assert_flag_c(&state, 0x00);
+
 	test_cleanup(&state);
 }
 
@@ -1908,7 +1969,8 @@ fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 fp* tests_php_plp[] = { test_PHP, test_PLP };
-fp* tests_jmp[] = { test_JMP, test_JMP_IND };
+fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
+fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -1936,4 +1998,5 @@ void run_tests() {
 	RUN(tests_txs_tsx);
 	RUN(tests_jmp);
 	RUN(tests_php_plp);
+	RUN(tests_cmp);
 }

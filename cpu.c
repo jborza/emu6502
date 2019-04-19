@@ -10,9 +10,13 @@ void* unimplemented_instruction(State6502* state) {
 	exit(1);
 }
 
-void set_NV_flags(State6502* state, byte value) {
+int is_negative(byte value) {
+	return ((1 << 7) & value) != 0;
+}
+
+void set_NV_flags(State6502 * state, byte value) {
 	//N flag
-	state->flags.n = ((1 << 7) & value) != 0;
+	state->flags.n = is_negative(value);
 	//TODO implement NV flags
 }
 
@@ -25,7 +29,7 @@ void set_NZ_flags(State6502 * state, byte value) {
 		state->flags.z = 1;
 	}
 	//N flag
-	state->flags.n = ((1 << 7) & value) != 0;
+	state->flags.n = is_negative(value);
 }
 
 void clear_flags(State6502 * state) {
@@ -59,8 +63,7 @@ void push_byte_to_stack(State6502 * state, byte value) {
 }
 
 byte pop_byte_from_stack(State6502 * state) {
-	return state->memory[STACK_HOME + state->sp++];
-	state->sp++;
+	return state->memory[STACK_HOME + ++(state->sp)];
 }
 
 //bitwise or with accumulator
@@ -122,6 +125,27 @@ void EOR(State6502 * state, byte operand) {
 
 void JMP(State6502 * state, word address) {
 	state->pc = address;
+}
+
+void cmp_internal(State6502 * state, byte register_value, byte operand) {
+	//set carry flag if A >= M
+	state->flags.c = register_value >= operand;
+	//set zero flag if A == M
+	state->flags.z = register_value == operand;
+	//set negative flag if A - M is negative
+	state->flags.n = is_negative(register_value - operand);
+}
+
+void CMP(State6502 * state, byte operand) {
+	cmp_internal(state, state->a, operand);
+}
+
+void CPX(State6502 * state, byte operand) {
+	cmp_internal(state, state->x, operand);
+}
+
+void CPY(State6502 * state, byte operand) {
+	cmp_internal(state, state->y, operand);
 }
 
 word pop_word(State6502 * state) {
@@ -199,10 +223,10 @@ byte get_byte_absolute_y(State6502 * state) {
 
 word get_address_indirect_jmp(State6502 * state) {
 	//AN INDIRECT JUMP MUST NEVER USE A	VECTOR BEGINNING ON THE LAST BYTE OF A PAGE
-	word indirect_address = pop_word(state); 
+	word indirect_address = pop_word(state);
 	if ((indirect_address & 0xFF) == 0xFF) {
 		//avoid crossing the page boundary
-		return state->memory[indirect_address] | state->memory[indirect_address + 1 - 0xFF] << 8;
+		return state->memory[indirect_address] | state->memory[indirect_address - 0xFF] << 8;
 	}
 	else {
 		return read_word(state, indirect_address);
@@ -300,22 +324,22 @@ int emulate_6502_op(State6502 * state) {
 	case TXA: state->a = state->x; set_NZ_flags(state, state->a); break;
 	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break;
 	case TYA: state->a = state->y; set_NZ_flags(state, state->a);  break;
-	case TSX: state->x = state->sp; set_NZ_flags(state, state->x); break; //TODO test
-	case TXS: state->sp = state->x; set_NZ_flags(state, state->x); break; //TODO test
-	case CMP_IMM: unimplemented_instruction(state); break;
-	case CMP_ZP: unimplemented_instruction(state); break;
-	case CMP_ZPX: unimplemented_instruction(state); break;
-	case CMP_ABS: unimplemented_instruction(state); break;
-	case CMP_ABSX: unimplemented_instruction(state); break;
-	case CMP_ABSY: unimplemented_instruction(state); break;
-	case CMP_INDX: unimplemented_instruction(state); break;
-	case CMP_INDY: unimplemented_instruction(state); break;
-	case CPX_IMM: unimplemented_instruction(state); break;
-	case CPX_ZP: unimplemented_instruction(state); break;
-	case CPX_ABS: unimplemented_instruction(state); break;
-	case CPY_IMM: unimplemented_instruction(state); break;
-	case CPY_ZP: unimplemented_instruction(state); break;
-	case CPY_ABS: unimplemented_instruction(state); break;
+	case TSX: state->x = state->sp; set_NZ_flags(state, state->x); break;
+	case TXS: state->sp = state->x; set_NZ_flags(state, state->x); break;
+	case CMP_IMM: CMP(state, pop_byte(state)); break;
+	case CMP_ZP: CMP(state, get_byte_zero_page(state)); break;
+	case CMP_ZPX: CMP(state, get_byte_zero_page_x(state)); break; //TODO test
+	case CMP_ABS: CMP(state, get_byte_absolute(state)); break;//TODO test
+	case CMP_ABSX: CMP(state, get_byte_absolute_x(state)); break;//TODO test
+	case CMP_ABSY: CMP(state, get_byte_absolute_y(state)); break;//TODO test
+	case CMP_INDX: CMP(state, get_byte_indirect_x(state)); break;//TODO test
+	case CMP_INDY: CMP(state, get_byte_indirect_y(state)); break;//TODO test
+	case CPX_IMM: CPX(state, pop_byte(state)); break;//TODO test
+	case CPX_ZP: CPX(state, get_byte_zero_page(state)); break;//TODO test
+	case CPX_ABS: CPX(state, get_byte_absolute(state)); break;//TODO test
+	case CPY_IMM: CPY(state, pop_byte(state)); break;//TODO test
+	case CPY_ZP: CPY(state, get_byte_zero_page(state)); break;//TODO test
+	case CPY_ABS: CPY(state, get_byte_absolute(state)); break;//TODO test
 	case DEC_ZP: DEC(state, get_address_zero_page(state)); break;
 	case DEC_ZPX: DEC(state, get_address_zero_page_x(state)); break;
 	case DEC_ABS: DEC(state, get_address_absolute(state)); break;
