@@ -14,6 +14,10 @@ int is_negative(byte value) {
 	return ((1 << 7) & value) != 0;
 }
 
+void set_z_flag(State6502* state, byte value) {
+	state->flags.z = value == 0;
+}
+
 void set_NV_flags(State6502 * state, byte value) {
 	//N flag
 	state->flags.n = is_negative(value);
@@ -21,13 +25,7 @@ void set_NV_flags(State6502 * state, byte value) {
 }
 
 void set_NZ_flags(State6502 * state, byte value) {
-	//Z flag
-	if (value) {
-		state->flags.z = 0;
-	}
-	else {
-		state->flags.z = 1;
-	}
+	set_z_flag(state, value);
 	//N flag
 	state->flags.n = is_negative(value);
 }
@@ -167,7 +165,7 @@ void CPY(State6502 * state, byte operand) {
 byte asl(State6502* state, byte operand) {
 	byte result = operand << 1;
 	state->flags.c = operand > 0x80;
-	set_NV_flags(state, result);
+	set_NZ_flags(state, result);
 	return result;
 }
 
@@ -184,7 +182,7 @@ void ASL_MEM(State6502* state, word address) {
 byte lsr(State6502* state, byte operand) {
 	byte result = operand >> 1;
 	state->flags.c = (operand & 0x01) != 0;
-	set_NV_flags(state, result);
+	set_NZ_flags(state, result);
 	return result;
 }
 
@@ -197,15 +195,11 @@ void LSR_MEM(State6502* state, word address) {
 	state->memory[address] = lsr(state, operand);
 }
 
-byte ror(State6502* state, byte operand) {
-	//TODO implement
-}
-
 byte rol(State6502* state, byte operand) {
 	word result_word = (operand << 1) | state->flags.c;
 	state->flags.c = result_word > 0xFF;
 	byte result = result_word & 0xFF;
-	set_NV_flags(state, result);
+	set_NZ_flags(state, result);
 	return result;
 }
 
@@ -216,6 +210,23 @@ void ROL_A(State6502* state) {
 void ROL_MEM(State6502* state, word address) {
 	byte operand = state->memory[address];
 	state->memory[address] = rol(state, operand);
+}
+
+byte ror(State6502* state, byte operand) {
+	word result_word = (operand >> 1) | (state->flags.c << 7);
+	state->flags.c = (result_word & 0x01) != 0;
+	byte result = result_word & 0xFF;
+	set_NZ_flags(state, result);
+	return result;
+}
+
+void ROR_A(State6502 * state) {
+	state->a = rol(state, state->a);
+}
+
+void ROR_MEM(State6502 * state, word address) {
+	byte operand = state->memory[address];
+	state->memory[address] = ror(state, operand);
 }
 
 word pop_word(State6502 * state) {
@@ -469,11 +480,11 @@ int emulate_6502_op(State6502 * state) {
 	case ROL_ZPX: ROL_MEM(state, get_address_zero_page_x(state)); break;
 	case ROL_ABS: ROL_MEM(state, get_address_absolute(state)); break;
 	case ROL_ABSX: ROL_MEM(state, get_address_absolute_x(state)); break;
-	case ROR_ACC: unimplemented_instruction(state); break;
-	case ROR_ZP: unimplemented_instruction(state); break;
-	case ROR_ZPX: unimplemented_instruction(state); break;
-	case ROR_ABS: unimplemented_instruction(state); break;
-	case ROR_ABSX: unimplemented_instruction(state); break;
+	case ROR_ACC: ROR_A(state); break;
+	case ROR_ZP: ROR_MEM(state, get_address_zero_page(state)); break;
+	case ROR_ZPX: ROR_MEM(state, get_address_zero_page_x(state)); break;
+	case ROR_ABS: ROR_MEM(state, get_address_absolute(state)); break;
+	case ROR_ABSX: ROR_MEM(state, get_address_absolute_x(state)); break;
 	case SBC_IMM: SBC(state, pop_byte(state)); break;
 	case SBC_ZP: SBC(state, get_byte_zero_page(state)); break;
 	case SBC_ZPX: SBC(state, get_byte_zero_page_x(state)); break;
@@ -501,4 +512,3 @@ int emulate_6502_op(State6502 * state) {
 	}
 	return 0;
 }
-
