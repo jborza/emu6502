@@ -14,7 +14,7 @@ int is_negative(byte value) {
 	return ((1 << 7) & value) != 0;
 }
 
-void set_z_flag(State6502* state, byte value) {
+void set_z_flag(State6502 * state, byte value) {
 	state->flags.z = value == 0;
 }
 
@@ -22,6 +22,7 @@ void set_NV_flags(State6502 * state, byte value) {
 	//N flag
 	state->flags.n = is_negative(value);
 	//TODO implement NV flags
+	state->flags.v = ((1 << 6) & value) != 0;
 }
 
 void set_NZ_flags(State6502 * state, byte value) {
@@ -125,7 +126,7 @@ void JMP(State6502 * state, word address) {
 	state->pc = address;
 }
 
-void SBC(State6502* state, byte operand) {
+void SBC(State6502 * state, byte operand) {
 	//subtract operand from A
 	word operand_word = operand;
 	//borrow 0x100 from the carry flag if set
@@ -133,27 +134,35 @@ void SBC(State6502* state, byte operand) {
 		operand_word += 0x100;
 		state->flags.c = 0;
 	}
-	word result = state->a - operand_word;
+	word result_word = state->a - operand_word;
+	byte result = result_word & 0xFF;
 
 	// overflow flag if the the result doesn't fit into the signed byte range -128 to 127
-	state->flags.v = (state->a ^ operand) & 0x80) && ((state->a ^ (result) & 0x80);
+	state->flags.v = ((state->a ^ operand) & 0x80) && ((state->a ^ result) & 0x80);
 
 	state->a -= result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
 }
 
-void ADC(State6502* state, byte operand) {
+void ADC(State6502 * state, byte operand) {
 	//add operand to A
-	word result_word = operand + state->a + state->flags.c ? 1 : 0;
+	word result_word = operand + state->a + (state->flags.c ? 1 : 0);
 	byte result = result_word & 0xFF;
 	//set overflow flag if the result's sign would change - the result doesn't fit into a signed byte
 	//there is overflow if the inputs do not have different signs and the input sign is different from the output sign 
 	state->flags.v = !((state->a ^ operand) & 0x80) && ((state->a ^ result) & 0x80);
-	state->a = state->a & 0xFF;
+	state->a = result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
 	state->flags.c = result_word > 0xFF;
+}
+
+void BIT(State6502 * state, byte operand) {
+	//BIT sets the Z flag as though the value in the address tested were ANDed with the accumulator. 
+	//The N and V flags are set to match bits 7 and 6 respectively in the value stored at the tested address. 
+	set_NV_flags(state, operand);
+	state->flags.z = (state->a & operand) == 0;
 }
 
 void cmp_internal(State6502 * state, byte register_value, byte operand) {
@@ -177,40 +186,40 @@ void CPY(State6502 * state, byte operand) {
 	cmp_internal(state, state->y, operand);
 }
 
-byte asl(State6502* state, byte operand) {
+byte asl(State6502 * state, byte operand) {
 	byte result = operand << 1;
 	state->flags.c = operand > 0x80;
 	set_NZ_flags(state, result);
 	return result;
 }
 
-void ASL_A(State6502* state) {
+void ASL_A(State6502 * state) {
 	state->a = asl(state, state->a);
 }
 
-void ASL_MEM(State6502* state, word address) {
+void ASL_MEM(State6502 * state, word address) {
 	byte operand = state->memory[address];
 	state->memory[address] = operand;
 	state->memory[address] = asl(state, operand);
 }
 
-byte lsr(State6502* state, byte operand) {
+byte lsr(State6502 * state, byte operand) {
 	byte result = operand >> 1;
 	state->flags.c = (operand & 0x01) != 0;
 	set_NZ_flags(state, result);
 	return result;
 }
 
-void LSR_A(State6502* state) {
+void LSR_A(State6502 * state) {
 	state->a = lsr(state, state->a);
 }
 
-void LSR_MEM(State6502* state, word address) {
+void LSR_MEM(State6502 * state, word address) {
 	byte operand = state->memory[address];
 	state->memory[address] = lsr(state, operand);
 }
 
-byte rol(State6502* state, byte operand) {
+byte rol(State6502 * state, byte operand) {
 	word result_word = (operand << 1) | state->flags.c;
 	state->flags.c = result_word > 0xFF;
 	byte result = result_word & 0xFF;
@@ -218,16 +227,16 @@ byte rol(State6502* state, byte operand) {
 	return result;
 }
 
-void ROL_A(State6502* state) {
+void ROL_A(State6502 * state) {
 	state->a = rol(state, state->a);
 }
 
-void ROL_MEM(State6502* state, word address) {
+void ROL_MEM(State6502 * state, word address) {
 	byte operand = state->memory[address];
 	state->memory[address] = rol(state, operand);
 }
 
-byte ror(State6502* state, byte operand) {
+byte ror(State6502 * state, byte operand) {
 	word result_word = (operand >> 1) | (state->flags.c << 7);
 	state->flags.c = (result_word & 0x01) != 0;
 	byte result = result_word & 0xFF;
@@ -388,8 +397,8 @@ int emulate_6502_op(State6502 * state) {
 	case BPL_REL: unimplemented_instruction(state); break;
 	case BVC_REL: unimplemented_instruction(state); break;
 	case BVS_REL: unimplemented_instruction(state); break;
-	case BIT_ZP: unimplemented_instruction(state); break;
-	case BIT_ABS: unimplemented_instruction(state); break;
+	case BIT_ZP: BIT(state, get_byte_zero_page(state)); break;
+	case BIT_ABS: BIT(state, get_byte_absolute(state)); break;
 	case BRK: state->running = 0;
 		state->flags.b = 1;
 		break; //BRK

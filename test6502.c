@@ -1927,7 +1927,7 @@ void test_CMP_ABS_greater_2() {
 	test_step(&state);
 
 	assert_flag_z(&state, 0x00); // 0x82 != 0x1A
-	assert_flag_n(&state, 0x00); 
+	assert_flag_n(&state, 0x00);
 	assert_flag_c(&state, 0x01); // 0x82 > 0x1A
 
 	test_cleanup(&state);
@@ -1990,7 +1990,7 @@ void test_SBC_IMM() {
 	State6502 state = create_blank_state();
 	state.a = 0x08;
 
-	char program[] = { SBC_IMM, 0x06};
+	char program[] = { SBC_IMM, 0x06 };
 	memcpy(state.memory, program, sizeof(program));
 	test_step(&state);
 
@@ -2022,6 +2022,56 @@ void test_SBC_IMM_carry() {
 	test_cleanup(&state);
 }
 
+// ADC
+
+void test_ADC_IMM_exec(byte a, byte c, byte operand, byte expected_a, byte expected_n, byte expected_z, byte expected_c, byte expected_v) {
+	State6502 state = create_blank_state();
+	state.a = a;
+	state.flags.c = c;
+	char program[] = { ADC_IMM, operand };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	//assert
+	assertA(&state, expected_a);
+	assert_flag_n(&state, expected_n);
+	assert_flag_z(&state, expected_z);
+	assert_flag_c(&state, expected_c);
+	assert_flag_v(&state, expected_v);
+}
+
+void test_ADC_IMM_multiple() {
+	//A, C, OP => A, N, Z, C, V
+	test_ADC_IMM_exec(2, 0, 3, 5, 0, 0, 0, 0); //straight addition
+	test_ADC_IMM_exec(2, 1, 3, 6, 0, 0, 0, 0); //straight addition with carry
+	test_ADC_IMM_exec(2, 0, 254, 0, 0, 1, 1, 0); //carry and zero
+	test_ADC_IMM_exec(2, 0, 253, 255, 1, 0, 0, 1); //just negative
+	test_ADC_IMM_exec(253, 0, 6, 3, 0, 0, 1, 1); //carry and overflow
+	test_ADC_IMM_exec(125, 1, 2, 128, 1, 0, 0, 1); //negative and overflow
+}
+
+// BIT
+void test_BIT_exec(byte a, byte expected_a, byte expected_n, byte expected_v, byte expected_z) {
+	State6502 state = create_blank_state();
+	state.a = a;
+	char program[] = { BIT_ABS, 0x45, 0x03};
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x0345] = 0xF3;
+	//act
+	test_step(&state);
+	//assert
+	assertA(&state, expected_a);
+	assert_flag_n(&state, expected_n);
+	assert_flag_z(&state, expected_z);
+	assert_flag_v(&state, expected_v);
+}
+
+void test_BIT_multiple() {
+	test_BIT_exec(128, 128, 1, 1, 0);
+	test_BIT_exec(5, 5, 1, 1, 0);
+	test_BIT_exec(4, 4, 1, 1, 1); // 128 & 4 = 0 -> Z = 1
+	test_BIT_exec(3, 3, 1, 1, 0);
+}
 
 /////////////////////
 
@@ -2045,6 +2095,8 @@ fp* tests_php_plp[] = { test_PHP, test_PLP };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
 fp* tests_sbc[] = { test_SBC_IMM };
+fp* tests_adc[] = { test_ADC_IMM_multiple };
+fp* tests_bit[] = { test_BIT_multiple };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2054,6 +2106,8 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_bit);
+	RUN(tests_adc);
 	RUN(tests_sbc);
 	RUN(tests_lda);
 	RUN(tests_ora);
