@@ -138,7 +138,20 @@ void SBC(State6502* state, byte operand) {
 	state->a -= result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
-	//state->flags.v = ??? ; //
+	//todo set overflow flag
+	//state->flags.v = ??? ; 
+}
+
+void ADC(State6502* state, byte operand) {
+	//add operand to A
+	word result_word = operand + state->a + state->flags.c ? 1 : 0;
+	state->a = state->a & 0xFF;
+	state->flags.n = is_negative(state->a);
+	state->flags.z = state->a == 0;
+	state->flags.c = result_word > 0xFF;
+	//todo set overflow flag if the result's sign would change - the result doesn't fit into a signed byte
+	//!((M^N) & 0x80) && ((M^result) & 0x80) - there is overflow if the inputs do not have different signs and the input sign is different from the output sign 
+	//state->flags.v = ??? ; 
 }
 
 void cmp_internal(State6502 * state, byte register_value, byte operand) {
@@ -344,14 +357,14 @@ byte get_byte_indirect_y(State6502 * state) {
 int emulate_6502_op(State6502 * state) {
 	byte* opcode = &state->memory[state->pc++];
 	switch (*opcode) {
-	case ADC_IMM: unimplemented_instruction(state); break;
-	case ADC_ZP: unimplemented_instruction(state); break;
-	case ADC_ZPX: unimplemented_instruction(state); break;
-	case ADC_ABS: unimplemented_instruction(state); break;
-	case ADC_ABSX: unimplemented_instruction(state); break;
-	case ADC_ABSY: unimplemented_instruction(state); break;
-	case ADC_INDX: unimplemented_instruction(state); break;
-	case ADC_INDY: unimplemented_instruction(state); break;
+	case ADC_IMM: ADC(state, pop_byte(state)); break;
+	case ADC_ZP:  ADC(state, get_byte_zero_page(state)); break;
+	case ADC_ZPX: ADC(state, get_byte_zero_page_x(state)); break;
+	case ADC_ABS: ADC(state, get_byte_absolute(state)); break;
+	case ADC_ABSX: ADC(state, get_byte_absolute_x(state)); break;
+	case ADC_ABSY: ADC(state, get_byte_absolute_y(state)); break;
+	case ADC_INDX: ADC(state, get_byte_indirect_x(state)); break;
+	case ADC_INDY: ADC(state, get_byte_indirect_y(state)); break;
 	case AND_IMM: AND(state, pop_byte(state)); break;
 	case AND_ZP: AND(state, get_byte_zero_page(state)); break;
 	case AND_ZPX: AND(state, get_byte_zero_page_x(state)); break;
