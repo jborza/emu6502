@@ -135,23 +135,25 @@ void SBC(State6502* state, byte operand) {
 	}
 	word result = state->a - operand_word;
 
+	// overflow flag if the the result doesn't fit into the signed byte range -128 to 127
+	state->flags.v = (state->a ^ operand) & 0x80) && ((state->a ^ (result) & 0x80);
+
 	state->a -= result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
-	//todo set overflow flag
-	//state->flags.v = ??? ; 
 }
 
 void ADC(State6502* state, byte operand) {
 	//add operand to A
 	word result_word = operand + state->a + state->flags.c ? 1 : 0;
+	byte result = result_word & 0xFF;
+	//set overflow flag if the result's sign would change - the result doesn't fit into a signed byte
+	//there is overflow if the inputs do not have different signs and the input sign is different from the output sign 
+	state->flags.v = !((state->a ^ operand) & 0x80) && ((state->a ^ result) & 0x80);
 	state->a = state->a & 0xFF;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
 	state->flags.c = result_word > 0xFF;
-	//todo set overflow flag if the result's sign would change - the result doesn't fit into a signed byte
-	//!((M^N) & 0x80) && ((M^result) & 0x80) - there is overflow if the inputs do not have different signs and the input sign is different from the output sign 
-	//state->flags.v = ??? ; 
 }
 
 void cmp_internal(State6502 * state, byte register_value, byte operand) {
