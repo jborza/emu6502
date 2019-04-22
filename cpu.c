@@ -151,7 +151,11 @@ void ADC(State6502 * state, byte operand) {
 	byte result = result_word & 0xFF;
 	//set overflow flag if the result's sign would change - the result doesn't fit into a signed byte
 	//there is overflow if the inputs do not have different signs and the input sign is different from the output sign 
+	//meaning two numbers that have the same sign are added, and the result has a different sign.
+
+	//overflow = <'a' and 'arg' have the same sign> & <the sign of 'a'and 'sum' differs> & <extract sign bit>
 	state->flags.v = !((state->a ^ operand) & 0x80) && ((state->a ^ result) & 0x80);
+
 	state->a = result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;

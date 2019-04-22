@@ -2045,8 +2045,9 @@ void test_ADC_IMM_multiple() {
 	test_ADC_IMM_exec(2, 0, 3, 5, 0, 0, 0, 0); //straight addition
 	test_ADC_IMM_exec(2, 1, 3, 6, 0, 0, 0, 0); //straight addition with carry
 	test_ADC_IMM_exec(2, 0, 254, 0, 0, 1, 1, 0); //carry and zero
-	test_ADC_IMM_exec(2, 0, 253, 255, 1, 0, 0, 1); //just negative
-	test_ADC_IMM_exec(253, 0, 6, 3, 0, 0, 1, 1); //carry and overflow
+	test_ADC_IMM_exec(2, 0, 253, 255, 1, 0, 0, 0); //just negative
+	test_ADC_IMM_exec(253, 0, 6, 3, 0, 0, 1, 0); //carry
+	test_ADC_IMM_exec(254, 1, 1, 0, 0, 1, 1, 0); //carry and zero
 	test_ADC_IMM_exec(125, 1, 2, 128, 1, 0, 0, 1); //negative and overflow
 }
 
