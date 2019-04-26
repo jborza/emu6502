@@ -44,7 +44,7 @@ void test_step(State6502 * state) {
 	print_all(state);
 }
 
-void test_step_until_break(State6502* state) {
+void test_step_until_break(State6502 * state) {
 	do {
 		print_all(state);
 		disassemble_6502(state->memory, state->pc);
@@ -2059,6 +2059,7 @@ void test_SBC_IMM_carry() {
 }
 
 void test_SBC_IMM_(byte a, byte c, byte operand, byte expected_a, byte expected_n, byte expected_z, byte expected_c, byte expected_v) {
+	printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 	State6502 state = create_blank_state();
 	state.a = a;
 	state.flags.c = c;
@@ -2084,13 +2085,13 @@ void test_SBC_IMM_multiple() {
 	test_SBC_IMM_(0x04, 0, /* OP */ 0x06, /*A*/ 0xFD, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 254
 	//source: http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
 	//C7 - carry, B - Borrow, S7 - N, V - V
-	test_SBC_IMM_(0x50, 0, /* OP */ 0xF0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
-	test_SBC_IMM_(0x50, 1, /* OP */ 0xB0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 1); //Unsigned borrow and signed overflow
-	test_SBC_IMM_(0x50, 0, /* OP */ 0x70, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0x50, 1, /* OP */ 0xF0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0x50, 1, /* OP */ 0xB0, /*A*/ 0xA0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 1); //Unsigned borrow and signed overflow
+	test_SBC_IMM_(0x50, 1, /* OP */ 0x70, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
 	test_SBC_IMM_(0x50, 1, /* OP */ 0x30, /*A*/ 0x20, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow
-	test_SBC_IMM_(0xD0, 0, /* OP */ 0xF0, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0xD0, 1, /* OP */ 0xF0, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
 	test_SBC_IMM_(0xD0, 1, /* OP */ 0xB0, /*A*/ 0x20, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow
-	test_SBC_IMM_(0xD0, 0, /* OP */ 0x70, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 1); //No unsigned borrow but signed overflow	
+	test_SBC_IMM_(0xD0, 1, /* OP */ 0x70, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 1); //No unsigned borrow but signed overflow	
 	test_SBC_IMM_(0xD0, 1, /* OP */ 0x30, /*A*/ 0xA0, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow	
 }
 
@@ -2150,7 +2151,7 @@ void test_BIT_multiple() {
 // JSR and RTS
 void test_JSR() {
 	State6502 state = create_blank_state();
-	char program[] = { NOP, JSR_ABS, 0x23, 0x01};
+	char program[] = { NOP, JSR_ABS, 0x23, 0x01 };
 	memcpy(state.memory, program, sizeof(program));
 	//act
 	test_step(&state);
@@ -2179,7 +2180,7 @@ void test_RTS() {
 
 void test_JSR_RTS() {
 	State6502 state = create_blank_state();
-	char program[] = { JSR_ABS, 0x06, 0x00, LDA_IMM, 0xAA, BRK, LDX_IMM, 0xBB, RTS};
+	char program[] = { JSR_ABS, 0x06, 0x00, LDA_IMM, 0xAA, BRK, LDX_IMM, 0xBB, RTS };
 	memcpy(state.memory, program, sizeof(program));
 	//act	
 	test_step_until_break(&state);
@@ -2232,13 +2233,16 @@ fp* tests_brk[] = { test_BRK };
 
 void run_suite(fp * *suite, int size) {
 	for (int i = 0; i < size; i++)
+	{
+		printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 		suite[i]();
+	}
 }
 
 void run_tests() {
+	RUN(tests_sbc);
 	RUN(tests_brk);
 	RUN(tests_jsr_rts);
-	RUN(tests_sbc);
 	RUN(tests_bit);
 	RUN(tests_adc);
 	RUN(tests_lda);
