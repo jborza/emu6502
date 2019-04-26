@@ -44,6 +44,15 @@ void test_step(State6502 * state) {
 	print_all(state);
 }
 
+void test_step_until_break(State6502* state) {
+	do {
+		print_all(state);
+		disassemble_6502(state->memory, state->pc);
+		emulate_6502_op(state);
+	} while (state->flags.b != 1);
+	print_all(state);
+}
+
 void test_cleanup(State6502 * state) {
 	free(state->memory);
 }
@@ -2173,8 +2182,7 @@ void test_JSR_RTS() {
 	char program[] = { JSR_ABS, 0x06, 0x00, LDA_IMM, 0xAA, BRK, LDX_IMM, 0xBB, RTS};
 	memcpy(state.memory, program, sizeof(program));
 	//act	
-	test_step(&state);
-	test_step(&state);
+	test_step_until_break(&state);
 	//assert
 	assert_pc(&state, 0x0006);
 	assert_sp(&state, 0xFF);
