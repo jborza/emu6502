@@ -1369,6 +1369,32 @@ void test_INC_ZP_wraparound() {
 	test_cleanup(&state);
 }
 
+void test_INC_ZP_(byte operand, byte expected, byte expected_zero, byte expected_n) {
+	State6502 state = create_blank_state();
+
+	char program[] = { INC_ZP, 0xFF };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0xFF] = 0xFF;
+	test_step(&state);
+
+	assert_memory(&state, 0xFF, 0x00);
+	assert_flag_z(&state, 1);
+	assert_flag_n(&state, 0);
+
+	test_cleanup(&state);
+}
+
+#define _ ,
+#define __ ,
+
+void test_INC_ZP_multiple() {
+	//           A    =>   A    Z   N
+	test_INC_ZP_(0x00 __ 0x01 _ 0 _ 0);
+	test_INC_ZP_(0x7F __ 0x80 _ 0 _ 1);
+	test_INC_ZP_(0xFF __ 0x00 _ 1 _ 0);
+	test_INC_ZP_(0xFE __ 0xFF _ 0 _ 1);
+}
+
 void test_INC_ZPX() {
 	State6502 state = create_blank_state();
 	state.x = 0x02;
@@ -2055,7 +2081,7 @@ void test_ADC_IMM_multiple() {
 void test_BIT_exec(byte a, byte expected_a, byte expected_n, byte expected_v, byte expected_z) {
 	State6502 state = create_blank_state();
 	state.a = a;
-	char program[] = { BIT_ABS, 0x45, 0x03};
+	char program[] = { BIT_ABS, 0x45, 0x03 };
 	memcpy(state.memory, program, sizeof(program));
 	state.memory[0x0345] = 0xF3;
 	//act
@@ -2068,6 +2094,7 @@ void test_BIT_exec(byte a, byte expected_a, byte expected_n, byte expected_v, by
 }
 
 void test_BIT_multiple() {
+	// A => A N V Z
 	test_BIT_exec(128, 128, 1, 1, 0);
 	test_BIT_exec(5, 5, 1, 1, 0);
 	test_BIT_exec(4, 4, 1, 1, 1); // 128 & 4 = 0 -> Z = 1
@@ -2086,7 +2113,7 @@ fp* tests_stx[] = { test_STX_ZP, test_STX_ZPY, test_STX_ABS };
 fp* tests_sty[] = { test_STY_ZP, test_STY_ZPX, test_STY_ABS };
 fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DEY_wraparound, test_INX, test_INX_wraparound, test_INY, test_INY_wraparound };
 fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
-fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
+fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_multiple, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
