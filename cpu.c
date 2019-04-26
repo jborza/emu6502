@@ -150,7 +150,7 @@ void SBC(State6502 * state, byte operand) {
 	state->a = result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
-	state->flags.c = result_word > 0xFF;
+	state->flags.c = result_word <= 0xFF;
 }
 
 void ADC(State6502 * state, byte operand) {

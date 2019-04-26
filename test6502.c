@@ -2078,11 +2078,12 @@ void test_SBC_IMM_(byte a, byte c, byte operand, byte expected_a, byte expected_
 
 void test_SBC_IMM_multiple() {
 	//A, C, OP => A, N, Z, C, V
-	test_SBC_IMM_(0x08, 0, /* OP */ 0x01, /*A*/ 0x06, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //regular subtraction without carry bit
-	test_SBC_IMM_(0x08, 1, /* OP */ 0x01, /*A*/ 0x07, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //regular subtraction with carry bit
-	test_SBC_IMM_(0x0A, 1, /* OP */ 0x0A, /*A*/ 0x00, /*N*/ 0, /*Z*/ 1, /*C*/ 0, /*V*/ 0); //zero 
-	test_SBC_IMM_(0x04, 1, /* OP */ 0x06, /*A*/ 0xFE, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 255
-	test_SBC_IMM_(0x04, 0, /* OP */ 0x06, /*A*/ 0xFD, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 254
+	test_SBC_IMM_(0x08, 0, /* OP */ 0x01, /*A*/ 0x06, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //regular subtraction without carry bit
+	test_SBC_IMM_(0x08, 1, /* OP */ 0x01, /*A*/ 0x07, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //regular subtraction with carry bit
+	test_SBC_IMM_(0x0A, 1, /* OP */ 0x0A, /*A*/ 0x00, /*N*/ 0, /*Z*/ 1, /*C*/ 1, /*V*/ 0); //zero 
+	test_SBC_IMM_(0x0A, 0, /* OP */ 0x0A, /*A*/ 0xFF, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //negative
+	test_SBC_IMM_(0x04, 1, /* OP */ 0x06, /*A*/ 0xFE, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 255
+	test_SBC_IMM_(0x04, 0, /* OP */ 0x06, /*A*/ 0xFD, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 254
 	//source: http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
 	//C7 - carry, B - Borrow, S7 - N, V - V
 	test_SBC_IMM_(0x50, 1, /* OP */ 0xF0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
