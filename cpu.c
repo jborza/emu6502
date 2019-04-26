@@ -47,7 +47,7 @@ void clear_state(State6502 * state) {
 	state->x = 0;
 	state->y = 0;
 	state->pc = 0;
-	state->sp = 0;
+	state->sp = 0xFF; 
 	clear_flags(state);
 	state->running = 1;
 }
@@ -73,7 +73,7 @@ byte pop_byte_from_stack(State6502 * state) {
 word pop_word_from_stack(State6502* state) {
 	byte low = pop_byte_from_stack(state);
 	byte high = pop_byte_from_stack(state);
-	return low + (high >> 8);
+	return low + ((word)high >> 8);
 }
 
 //bitwise or with accumulator
@@ -266,12 +266,11 @@ void ROR_MEM(State6502 * state, word address) {
 }
 
 void JSR(State6502 * state, word address) {
-	byte target = state->memory[address];
 	//JSR pushes the address-1 of the next operation on to the stack before transferring program control to the following address.
 	word address_to_push = state->pc - 1;
 	push_byte_to_stack(state, (address_to_push >> 8 & 0xFF));
 	push_byte_to_stack(state, address_to_push & 0xFF);
-	state->pc = target;
+	state->pc = address;
 }
 
 void RTS_(State6502* state) {
