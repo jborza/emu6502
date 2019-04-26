@@ -61,8 +61,19 @@ void push_byte_to_stack(State6502 * state, byte value) {
 	state->memory[STACK_HOME + state->sp--] = value;
 }
 
+void push_word_to_stack(State6502* state, word value) {
+	push_byte_to_stack(state, (value >> 8) & 0xFF);
+	push_byte_to_stack(state, value & 0xFF);
+}
+
 byte pop_byte_from_stack(State6502 * state) {
 	return state->memory[STACK_HOME + ++(state->sp)];
+}
+
+word pop_word_from_stack(State6502* state) {
+	byte low = pop_byte_from_stack(state);
+	byte high = pop_byte_from_stack(state);
+	return low + (high >> 8);
 }
 
 //bitwise or with accumulator
@@ -254,6 +265,20 @@ void ROR_MEM(State6502 * state, word address) {
 	state->memory[address] = ror(state, operand);
 }
 
+void JSR(State6502 * state, word address) {
+	byte target = state->memory[address];
+	//JSR pushes the address-1 of the next operation on to the stack before transferring program control to the following address.
+	word address_to_push = state->pc - 1;
+	push_byte_to_stack(state, (address_to_push >> 8 & 0xFF));
+	push_byte_to_stack(state, address_to_push & 0xFF);
+	state->pc = target;
+}
+
+void RTS_(State6502* state) {
+	word address = pop_word_from_stack(state);
+	state->pc = address + 1;
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -422,7 +447,7 @@ int emulate_6502_op(State6502 * state) {
 		break;
 	}//pull procesor status 
 	case RTI: unimplemented_instruction(state); break;
-	case RTS: unimplemented_instruction(state); break;
+	case RTS: RTS_(state); break;
 	case SEC: state->flags.c = 1; break;
 	case SED: state->flags.d = 1; break;
 	case SEI: state->flags.i = 1; break;
@@ -468,7 +493,7 @@ int emulate_6502_op(State6502 * state) {
 	case INC_ABSX: INC(state, get_address_absolute_x(state)); break;
 	case JMP_ABS: JMP(state, get_address_absolute(state)); break;
 	case JMP_IND: JMP(state, get_address_indirect_jmp(state)); break;
-	case JSR_ABS: unimplemented_instruction(state); break;
+	case JSR_ABS: JSR(state, get_address_absolute(state)); break;
 	case LDA_IMM: LDA(state, pop_byte(state)); break;
 	case LDA_ZP: LDA(state, get_byte_zero_page(state));	break;
 	case LDA_ZPX: LDA(state, get_byte_zero_page_x(state)); break;
