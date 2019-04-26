@@ -2138,6 +2138,61 @@ void test_BIT_multiple() {
 	test_BIT_exec(3, 3, 1, 1, 0);
 }
 
+// JSR and RTS
+void test_JSR() {
+	State6502 state = create_blank_state();
+	char program[] = { NOP, JSR_ABS, 0x23, 0x01};
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x0123);
+	assert_memory(&state, 0x1FF, 0x00);
+	assert_memory(&state, 0x1FE, 0x03);
+	assert_sp(&state, 0xFD);
+}
+
+void test_RTS() {
+	State6502 state = create_blank_state();
+	state.sp = 0xFD;
+	char program[] = { NOP, JSR_ABS, 0x23, 0x01 };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x0123);
+	assert_memory(&state, 0x1FF, 0x00);
+	assert_memory(&state, 0x1FE, 0x03);
+	assert_sp(&state, 0xFD);
+}
+
+void test_JSR_RTS() {
+	State6502 state = create_blank_state();
+	char program[] = { JSR_ABS, 0x06, 0x00, LDA_IMM, 0xAA, BRK, LDX_IMM, 0xBB, RTS};
+	memcpy(state.memory, program, sizeof(program));
+	//act	
+	test_step(&state);
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x0006);
+	assert_sp(&state, 0xFF);
+	assertA(&state, 0xAA);
+	assertX(&state, 0xBB);
+}
+
+void test_BRK() {
+	State6502 state = create_blank_state();
+	char program[] = { BRK };
+	memcpy(state.memory, program, sizeof(program));
+	//act	
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x0001);
+	assert_flag_b(&state, 1);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -2162,6 +2217,8 @@ fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_great
 fp* tests_sbc[] = { test_SBC_IMM_multiple };
 fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
+fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS };
+fp* tests_brk[] = { test_BRK };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2171,6 +2228,8 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_brk);
+	RUN(tests_jsr_rts);
 	RUN(tests_sbc);
 	RUN(tests_bit);
 	RUN(tests_adc);
