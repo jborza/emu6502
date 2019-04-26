@@ -129,20 +129,17 @@ void JMP(State6502 * state, word address) {
 void SBC(State6502 * state, byte operand) {
 	//subtract operand from A
 	word operand_word = operand;
-	//borrow 0x100 from the carry flag if set
-	if (state->flags.c == 1) {
-		operand_word += 0x100;
-		state->flags.c = 0;
-	}
-	word result_word = state->a - operand_word;
+	//borrow the complement of carry flag - if the carry flag is 1, borrow 0 and vice versa
+	word result_word = state->a - operand_word - !state->flags.c;
 	byte result = result_word & 0xFF;
 
 	// overflow flag if the the result doesn't fit into the signed byte range -128 to 127
 	state->flags.v = ((state->a ^ operand) & 0x80) && ((state->a ^ result) & 0x80);
 
-	state->a -= result;
+	state->a = result;
 	state->flags.n = is_negative(state->a);
 	state->flags.z = state->a == 0;
+	state->flags.c = result_word > 0xFF;
 }
 
 void ADC(State6502 * state, byte operand) {

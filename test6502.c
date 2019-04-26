@@ -51,8 +51,9 @@ void test_cleanup(State6502 * state) {
 State6502 create_blank_state() {
 	State6502 state;
 	clear_state(&state);
-	state.memory = malloc(4096);
-	memset(state.memory, 0, sizeof(byte) * 4096);
+	const int memory_size = 65536;
+	state.memory = malloc(memory_size);
+	memset(state.memory, 0, sizeof(byte) * memory_size);
 	return state;
 }
 
@@ -2022,6 +2023,42 @@ void test_SBC_IMM_carry() {
 	test_cleanup(&state);
 }
 
+void test_SBC_IMM_(byte a, byte c, byte operand, byte expected_a, byte expected_n, byte expected_z, byte expected_c, byte expected_v) {
+	State6502 state = create_blank_state();
+	state.a = a;
+	state.flags.c = c;
+	char program[] = { SBC_IMM, operand };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	//assert
+	assertA(&state, expected_a);
+	assert_flag_n(&state, expected_n);
+	assert_flag_z(&state, expected_z);
+	assert_flag_c(&state, expected_c);
+	assert_flag_v(&state, expected_v);
+}
+
+
+void test_SBC_IMM_multiple() {
+	//A, C, OP => A, N, Z, C, V
+	test_SBC_IMM_(0x08, 0, /* OP */ 0x01, /*A*/ 0x06, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //regular subtraction without carry bit
+	test_SBC_IMM_(0x08, 1, /* OP */ 0x01, /*A*/ 0x07, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //regular subtraction with carry bit
+	test_SBC_IMM_(0x0A, 1, /* OP */ 0x0A, /*A*/ 0x00, /*N*/ 0, /*Z*/ 1, /*C*/ 0, /*V*/ 0); //zero 
+	test_SBC_IMM_(0x04, 1, /* OP */ 0x06, /*A*/ 0xFE, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 255
+	test_SBC_IMM_(0x04, 0, /* OP */ 0x06, /*A*/ 0xFD, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //borrow from carry bit - 4 + 256 - 6 = 254
+	//source: http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+	//C7 - carry, B - Borrow, S7 - N, V - V
+	test_SBC_IMM_(0x50, 0, /* OP */ 0xF0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0x50, 1, /* OP */ 0xB0, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 0, /*V*/ 1); //Unsigned borrow and signed overflow
+	test_SBC_IMM_(0x50, 0, /* OP */ 0x70, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0x50, 1, /* OP */ 0x30, /*A*/ 0x20, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow
+	test_SBC_IMM_(0xD0, 0, /* OP */ 0xF0, /*A*/ 0xE0, /*N*/ 1, /*Z*/ 0, /*C*/ 0, /*V*/ 0); //Unsigned borrow but no signed overflow
+	test_SBC_IMM_(0xD0, 1, /* OP */ 0xB0, /*A*/ 0x20, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow
+	test_SBC_IMM_(0xD0, 0, /* OP */ 0x70, /*A*/ 0x60, /*N*/ 0, /*Z*/ 0, /*C*/ 1, /*V*/ 1); //No unsigned borrow but signed overflow	
+	test_SBC_IMM_(0xD0, 1, /* OP */ 0x30, /*A*/ 0xA0, /*N*/ 1, /*Z*/ 0, /*C*/ 1, /*V*/ 0); //No unsigned borrow or signed overflow	
+}
+
 // ADC
 
 void test_ADC_IMM_exec(byte a, byte c, byte operand, byte expected_a, byte expected_n, byte expected_z, byte expected_c, byte expected_v) {
@@ -2095,7 +2132,7 @@ fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 fp* tests_php_plp[] = { test_PHP, test_PLP };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
-fp* tests_sbc[] = { test_SBC_IMM };
+fp* tests_sbc[] = { test_SBC_IMM_multiple };
 fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
 
@@ -2107,9 +2144,9 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_sbc);
 	RUN(tests_bit);
 	RUN(tests_adc);
-	RUN(tests_sbc);
 	RUN(tests_lda);
 	RUN(tests_ora);
 	RUN(tests_and);
