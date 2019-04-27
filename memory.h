@@ -1,6 +1,10 @@
 #pragma once
 #include "state.h"
 
+byte fetch_byte(State6502* state);
+
+word fetch_word(State6502* state);
+
 word read_word(State6502* state, word address);
 
 word get_address_zero_page(State6502* state);
