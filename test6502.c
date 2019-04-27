@@ -2263,35 +2263,13 @@ void test_BRK() {
 
 //BEQ, BCC, ...
 
-void test_BEQ() {
-	State6502 state = create_blank_state();
-	char program[] = { LDX_IMM, 0x00, BEQ_REL, 0xFC };
-	memcpy(state.memory, program, sizeof(program));
-	//act
-	test_step(&state);
-	test_step(&state);
-	//assert
-	assert_pc(&state, 0x00);
-}
-
-void test_BEQ_skip() {
-	State6502 state = create_blank_state();
-	char program[] = { LDX_IMM, 0x01, BEQ_REL, 0xFC };
-	memcpy(state.memory, program, sizeof(program));
-	//act
-	test_step(&state);
-	test_step(&state);
-	//assert
-	assert_pc(&state, 0x04);
-}
-
 void test_branch(byte opcode, byte n, byte v, byte z, byte c, word expected_pc){
 	State6502 state = create_blank_state();
 	state.flags.n = n;
 	state.flags.v = n;
 	state.flags.z = z;
 	state.flags.c = c;
-	char program[] = { BEQ_REL, 0xFE };
+	char program[] = { opcode, 0xFE };
 	memcpy(state.memory, program, sizeof(program));
 	//act
 	test_step(&state);
@@ -2344,7 +2322,7 @@ fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
 fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS };
 fp* tests_brk[] = { test_BRK };
-fp* tests_branch[] = { test_BEQ, test_BEQ_skip, test_branching_multiple };
+fp* tests_branch[] = { test_branching_multiple };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
