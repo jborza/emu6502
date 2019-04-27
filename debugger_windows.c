@@ -10,7 +10,11 @@
 
 #define MEMORY_SIZE 0xFFFF
 #define PRG_START 0x0600
-#define BLOCK 0xDB
+
+#define DISP_WIDTH 32
+#define DISP_HEIGHT 32
+
+#define FRAME_RIGHT 35
 
 int glob_file_size;
 int last_key;
@@ -19,6 +23,11 @@ HANDLE hStdOut;
 
 void init_console() {
 	hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	SMALL_RECT windowSize = { 0, 0,  80, 40 };
+
+	/* Set the window size */
+	SetConsoleWindowInfo(hStdOut, TRUE, &windowSize);
 }
 
 void con_set_color(unsigned int fg_color, unsigned int bg_color)
@@ -48,7 +57,7 @@ void print_row(State6502 * state, int start_address) {
 			last_color = state->memory[address];
 		}
 		//WriteConsoleA()
-		
+
 		WriteConsoleA(hStdOut, " ", 1, &dwCount, NULL);
 		//WriteConsoleOutputCharacterA(hStdOut, "*",1,)
 		//_putch(' ');
@@ -56,7 +65,7 @@ void print_row(State6502 * state, int start_address) {
 	}
 }
 
-void print_mem(State6502 * state) {
+void print_mem_slow(State6502 * state) {
 	for (int row = 0; row < 32; row++)
 	{
 		con_set_xy(1, 1 + row);
@@ -64,25 +73,40 @@ void print_mem(State6502 * state) {
 	}
 }
 
+
+void print_mem(State6502 * state) {
+	SMALL_RECT console_write_area = { 1, 1, DISP_WIDTH + 1, DISP_HEIGHT + 1 };
+	CHAR_INFO console_buffer[DISP_WIDTH * DISP_HEIGHT];
+	COORD character_position = { 0, 0 };
+	COORD console_buffer_size = { DISP_WIDTH, DISP_HEIGHT };
+	for (int y = 0; y < DISP_WIDTH; y++)
+		for (int x = 0; x < DISP_HEIGHT; x++) {
+			console_buffer[x + y * DISP_WIDTH].Char.AsciiChar = 0;
+			byte color_bg = state->memory[0x200 + x + y * DISP_WIDTH];
+			console_buffer[x + y * DISP_WIDTH].Attributes = color_bg << 4;
+		}
+	WriteConsoleOutputA(hStdOut, console_buffer, console_buffer_size, character_position, &console_write_area);
+}
+
 void print_state_debug(State6502 * state) {
-	con_set_xy(40, 0);
+	con_set_xy(FRAME_RIGHT, 0);
 	printf("A=$%02X X=$%02X Y=$%02X", state->a, state->x, state->y);
-	con_set_xy(40, 1);
+	con_set_xy(FRAME_RIGHT, 1);
 	printf("SP=$%02X PC=$%04X", state->sp, state->pc);
-	con_set_xy(40, 3);
+	con_set_xy(FRAME_RIGHT, 3);
 	printf("NV-BDIZC");
-	con_set_xy(40, 4);
+	con_set_xy(FRAME_RIGHT, 4);
 	printf("%d%d%d%d%d%d%d%d", state->flags.n, state->flags.v, state->flags.pad, state->flags.b, state->flags.d, state->flags.i, state->flags.z, state->flags.c);
 }
 
 void print_stack(State6502 * state) {
-	con_set_xy(40, 16);
+	con_set_xy(FRAME_RIGHT, 16);
 	for (int i = state->sp + 1; i <= 0xFF; i++)
 		printf("%02x ", state->memory[STACK_HOME + i]);
 }
 
 byte * read_bin() {
-	FILE* file = fopen("bins\\snake_fast.bin", "rb");
+	FILE* file = fopen("bins\\07.bin", "rb");
 	if (!file) {
 		int err = errno;
 		exit(1);
@@ -149,13 +173,13 @@ int main(int argc, char* argv[]) {
 	//update screen every N ticks
 	do
 	{
-		con_set_xy(40, 8);
+		con_set_xy(FRAME_RIGHT, 8);
 		printf("                                        ");
-		con_set_xy(40, 8);
+		con_set_xy(FRAME_RIGHT, 8);
 		con_set_color(0x0F, 0x00); //white FG, black BG
 
 		disassemble_6502(state.memory, state.pc);
-		for (int i = 0; i < 64; i++) {
+		for (int i = 0; i < 1; i++) {
 			emulate_6502_op(&state);
 			check_keys();
 			state.memory[0xFF] = last_key & 0xFF;
