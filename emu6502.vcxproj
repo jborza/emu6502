@@ -154,12 +154,14 @@
     <ClCompile Include="cpu.c" />
     <ClCompile Include="disassembler.c" />
     <ClCompile Include="emu6502.c" />
+    <ClCompile Include="memory.c" />
     <ClCompile Include="test6502.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.h" />
     <ClInclude Include="disassembler.h" />
     <ClInclude Include="flags.h" />
+    <ClInclude Include="memory.h" />
     <ClInclude Include="opcodes.h" />
     <ClInclude Include="state.h" />
     <ClInclude Include="test6502.h" />

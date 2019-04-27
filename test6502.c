@@ -163,9 +163,29 @@ void test_LDA_IMM() {
 
 	//assert	
 	assertA(&state, 0xAA);
+	assert_flag_n(&state, 1);
 
 	test_cleanup(&state);
 }
+
+void test_LDA_IMM_zero() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_IMM, 0x00 }; 
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x00);
+	assert_flag_z(&state, 1);
+
+	test_cleanup(&state);
+}
+
 
 void test_LDA_ZP() {
 	//initialize
@@ -843,6 +863,25 @@ void test_LDX_IMM() {
 
 	//assert	
 	assertX(&state, 0xAA);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_LDX_IMM_zero() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDX_IMM, 0x00 }; //LDX #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertX(&state, 0x00);
+	assert_flag_z(&state, 1);
 
 	test_cleanup(&state);
 }
@@ -938,6 +977,25 @@ void test_LDY_IMM() {
 
 	//assert	
 	assertY(&state, 0xAA);
+	assert_flag_n(&state, 1);
+
+	test_cleanup(&state);
+}
+
+void test_LDY_IMM_zero() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDY_IMM, 0x00 };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertY(&state, 0x00);
+	assert_flag_z(&state, 1);
 
 	test_cleanup(&state);
 }
@@ -2203,14 +2261,38 @@ void test_BRK() {
 	assert_flag_b(&state, 1);
 }
 
+//BEQ, BCC, ...
+
+void test_BEQ() {
+	State6502 state = create_blank_state();
+	char program[] = { LDX_IMM, 0x00, BEQ_REL, 0xFC };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x00);
+}
+
+void test_BEQ_skip() {
+	State6502 state = create_blank_state();
+	char program[] = { LDX_IMM, 0x01, BEQ_REL, 0xFC };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	test_step(&state);
+	//assert
+	assert_pc(&state, 0x04);
+}
+
 /////////////////////
 
 typedef void fp();
-fp* tests_lda[] = { test_LDA_IMM, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
+fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY };
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
-fp* tests_ldx[] = { test_LDX_IMM, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
-fp* tests_ldy[] = { test_LDY_IMM, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_LDY_ABSX };
+fp* tests_ldx[] = { test_LDX_IMM, test_LDX_IMM_zero, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
+fp* tests_ldy[] = { test_LDY_IMM, test_LDY_IMM_zero, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_LDY_ABSX };
 fp* tests_stx[] = { test_STX_ZP, test_STX_ZPY, test_STX_ABS };
 fp* tests_sty[] = { test_STY_ZP, test_STY_ZPX, test_STY_ABS };
 fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DEY_wraparound, test_INX, test_INX_wraparound, test_INY, test_INY_wraparound };
@@ -2229,6 +2311,7 @@ fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
 fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS };
 fp* tests_brk[] = { test_BRK };
+fp* tests_branch[] = { test_BEQ, test_BEQ_skip };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2241,16 +2324,16 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_branch);
 	RUN(tests_sbc);
 	RUN(tests_brk);
 	RUN(tests_jsr_rts);
 	RUN(tests_bit);
 	RUN(tests_adc);
-	RUN(tests_lda);
 	RUN(tests_ora);
 	RUN(tests_and);
-	RUN(tests_ldx);
 	RUN(tests_lda);
+	RUN(tests_ldx);
 	RUN(tests_ldy);
 	RUN(tests_stx);
 	RUN(tests_sty);
