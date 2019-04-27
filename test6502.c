@@ -2273,17 +2273,16 @@ void test_JSR() {
 
 void test_RTS() {
 	State6502 state = create_blank_state();
+	state.memory[STACK_HOME + 0xFF] = 0x01;
+	state.memory[STACK_HOME + 0xFE] = 0x23;
 	state.sp = 0xFD;
-	char program[] = { NOP, JSR_ABS, 0x23, 0x01 };
+	char program[] = { RTS };
 	memcpy(state.memory, program, sizeof(program));
 	//act
 	test_step(&state);
-	test_step(&state);
 	//assert
-	assert_pc(&state, 0x0123);
-	assert_memory(&state, 0x1FF, 0x00);
-	assert_memory(&state, 0x1FE, 0x03);
-	assert_sp(&state, 0xFD);
+	assert_pc(&state, 0x0124);
+	assert_sp(&state, 0xFF);
 }
 
 void test_JSR_RTS() {
@@ -2369,7 +2368,7 @@ fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_great
 fp* tests_sbc[] = { test_SBC_IMM_multiple };
 fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
-fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS };
+fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS, test_RTS };
 fp* tests_brk[] = { test_BRK };
 fp* tests_branch[] = { test_branching_multiple };
 
@@ -2408,4 +2407,5 @@ void run_tests() {
 	RUN(tests_jmp);
 	RUN(tests_php_plp);
 	RUN(tests_cmp);
+	printf("All tests succeeded.\n");
 }

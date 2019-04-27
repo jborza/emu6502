@@ -20,9 +20,7 @@ void set_z_flag(State6502 * state, byte value) {
 }
 
 void set_NV_flags(State6502 * state, byte value) {
-	//N flag
 	state->flags.n = is_negative(value);
-	//TODO implement NV flags
 	state->flags.v = ((1 << 6) & value) != 0;
 }
 
@@ -53,8 +51,6 @@ void clear_state(State6502 * state) {
 	state->running = 1;
 }
 
-
-
 void push_byte_to_stack(State6502 * state, byte value) {
 	//stack located between $0100 to $01FF
 	state->memory[STACK_HOME + state->sp--] = value;
@@ -72,7 +68,7 @@ byte pop_byte_from_stack(State6502 * state) {
 word pop_word_from_stack(State6502* state) {
 	byte low = pop_byte_from_stack(state);
 	byte high = pop_byte_from_stack(state);
-	return low + ((word)high >> 8);
+	return low + ((word)high << 8);
 }
 
 //bitwise or with accumulator
