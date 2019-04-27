@@ -1,0 +1,8 @@
+LDY #$0F
+LDX #$00
+loop:
+TYA
+STA $0200,X
+INX
+DEY
+BNE loop
