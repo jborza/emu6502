@@ -2285,6 +2285,39 @@ void test_BEQ_skip() {
 	assert_pc(&state, 0x04);
 }
 
+void test_branch(byte opcode, byte n, byte v, byte z, byte c, word expected_pc){
+	State6502 state = create_blank_state();
+	state.flags.n = n;
+	state.flags.v = n;
+	state.flags.z = z;
+	state.flags.c = c;
+	char program[] = { BEQ_REL, 0xFE };
+	memcpy(state.memory, program, sizeof(program));
+	//act
+	test_step(&state);
+	//assert
+	assert_pc(&state, expected_pc);
+}
+
+void test_branching_multiple() {
+	test_branch(BEQ_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
+	test_branch(BEQ_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 1, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BNE_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BNE_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 1, /*C*/ 0, /*EXP_PC*/0x02);
+	test_branch(BCC_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BCC_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 1, /*EXP_PC*/0x02);
+	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 1, /*EXP_PC*/0x02);
+	test_branch(BMI_REL, /*N*/ 1, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BMI_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
+	test_branch(BPL_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BPL_REL, /*N*/ 1, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
+	test_branch(BVC_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BVC_REL, /*N*/ 0, /*V*/ 1, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
+	test_branch(BVS_REL, /*N*/ 0, /*V*/ 1, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
+	test_branch(BVS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -2311,7 +2344,7 @@ fp* tests_adc[] = { test_ADC_IMM_multiple };
 fp* tests_bit[] = { test_BIT_multiple };
 fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS };
 fp* tests_brk[] = { test_BRK };
-fp* tests_branch[] = { test_BEQ, test_BEQ_skip };
+fp* tests_branch[] = { test_BEQ, test_BEQ_skip, test_branching_multiple };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
