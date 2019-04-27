@@ -1793,6 +1793,53 @@ void test_PLA() {
 	//initialize
 	State6502 state = create_blank_state();
 	state.sp = 0xFE;
+	state.memory[0x1FF] = 0x40;
+
+	//arrange
+	char program[] = { PLA };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x40);
+	assert_sp(&state, 0xFF);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 0);
+
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PLA_Z() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.sp = 0xFE;
+	state.memory[0x1FF] = 0x00;
+
+	//arrange
+	char program[] = { PLA };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x00);
+	assert_sp(&state, 0xFF);
+	assert_flag_z(&state, 1);
+	assert_flag_n(&state, 0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PLA_N() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.sp = 0xFE;
 	state.memory[0x1FF] = 0xBB;
 
 	//arrange
@@ -1805,6 +1852,8 @@ void test_PLA() {
 	//assert	
 	assertA(&state, 0xBB);
 	assert_sp(&state, 0xFF);
+	assert_flag_z(&state, 0);
+	assert_flag_n(&state, 1);
 
 	//cleanup
 	test_cleanup(&state);
@@ -2312,7 +2361,7 @@ fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_multiple, test_INC_ZP_wraparoun
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
-fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PHA_PLA };
+fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };
 fp* tests_php_plp[] = { test_PHP, test_PLP };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
