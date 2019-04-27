@@ -15,12 +15,14 @@
 int glob_file_size;
 int last_key;
 
+HANDLE hStdOut;
+
+void init_console() {
+	hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+}
+
 void con_set_color(unsigned int fg_color, unsigned int bg_color)
 {
-	HANDLE hStdOut;
-
-	hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
 	if (hStdOut == INVALID_HANDLE_VALUE) {
 		return;
 	}
@@ -37,6 +39,7 @@ void con_set_xy(int x, int y)
 }
 
 void print_row(State6502 * state, int start_address) {
+	DWORD dwCount;
 	byte last_color = 0xff;
 	for (int address = start_address; address < start_address + 32; address++) {
 		if (state->memory[address] != last_color)
@@ -44,22 +47,24 @@ void print_row(State6502 * state, int start_address) {
 			con_set_color(0x04, state->memory[address]);
 			last_color = state->memory[address];
 		}
-		_putch('*');
+		//WriteConsoleA()
+		
+		WriteConsoleA(hStdOut, " ", 1, &dwCount, NULL);
+		//WriteConsoleOutputCharacterA(hStdOut, "*",1,)
+		//_putch(' ');
 		//		printf(" ");
 	}
 }
 
 void print_mem(State6502 * state) {
-	con_set_xy(1, 1);
 	for (int row = 0; row < 32; row++)
 	{
-		print_row(state, 0x0200 + row * 32);
 		con_set_xy(1, 1 + row);
+		print_row(state, 0x0200 + row * 32);
 	}
 }
 
 void print_state_debug(State6502 * state) {
-	con_set_color(0x0F, 0x00); //white FG, black BG
 	con_set_xy(40, 0);
 	printf("A=$%02X X=$%02X Y=$%02X", state->a, state->x, state->y);
 	con_set_xy(40, 1);
@@ -139,6 +144,7 @@ int main(int argc, char* argv[]) {
 
 	state.pc = PRG_START;
 	//white - 0x0F
+	init_console();
 	print_frame();
 	//update screen every N ticks
 	do
@@ -146,15 +152,18 @@ int main(int argc, char* argv[]) {
 		con_set_xy(40, 8);
 		printf("                                        ");
 		con_set_xy(40, 8);
-		//disassemble_6502(state.memory, state.pc);
-		for (int i = 0; i < 32; i++) {
+		con_set_color(0x0F, 0x00); //white FG, black BG
+
+		disassemble_6502(state.memory, state.pc);
+		for (int i = 0; i < 64; i++) {
 			emulate_6502_op(&state);
 			check_keys();
 			state.memory[0xFF] = last_key & 0xFF;
 		}
 		print_mem(&state);
+		con_set_color(0x0F, 0x00); //white FG, black BG
 		print_state_debug(&state);
-		print_stack(&state);
+		//print_stack(&state);
 		state.memory[0xfe] = rand() & 0xFF;
 	} while (state.flags.b != 1);
 }
