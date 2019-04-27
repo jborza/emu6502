@@ -285,6 +285,48 @@ void BEQ(State6502* state) {
 		state->pc = address;
 }
 
+void BNE(State6502* state) {
+	word address = get_address_relative(state);
+	if (!state->flags.z)
+		state->pc = address;
+}
+
+void BCC(State6502* state) {
+	word address = get_address_relative(state);
+	if (!state->flags.c)
+		state->pc = address;
+}
+
+void BCS(State6502* state) {
+	word address = get_address_relative(state);
+	if (state->flags.c)
+		state->pc = address;
+}
+
+void BMI(State6502* state) {
+	word address = get_address_relative(state);
+	if (state->flags.n)
+		state->pc = address;
+}
+
+void BPL(State6502* state) {
+	word address = get_address_relative(state);
+	if (!state->flags.n)
+		state->pc = address;
+}
+
+void BVS(State6502* state) {
+	word address = get_address_relative(state);
+	if (state->flags.v)
+		state->pc = address;
+}
+
+void BVC(State6502* state) {
+	word address = get_address_relative(state);
+	if (!state->flags.v)
+		state->pc = address;
+}
+
 word pop_word(State6502 * state) {
 	byte low = pop_byte(state);
 	byte high = pop_byte(state);
@@ -316,14 +358,14 @@ int emulate_6502_op(State6502 * state) {
 	case ASL_ZPX: ASL_MEM(state, get_address_zero_page_x(state)); break;
 	case ASL_ABS: ASL_MEM(state, get_address_absolute(state)); break;
 	case ASL_ABSX: ASL_MEM(state, get_address_absolute_x(state)); break;
-	case BCC_REL: unimplemented_instruction(state); break;
-	case BCS_REL: unimplemented_instruction(state); break;
+	case BCC_REL: BCC(state); break;
+	case BCS_REL: BCS(state); break;
 	case BEQ_REL: BEQ(state); break;
-	case BMI_REL: unimplemented_instruction(state); break;
-	case BNE_REL: unimplemented_instruction(state); break;
-	case BPL_REL: unimplemented_instruction(state); break;
-	case BVC_REL: unimplemented_instruction(state); break;
-	case BVS_REL: unimplemented_instruction(state); break;
+	case BMI_REL: BMI(state); break;
+	case BNE_REL: BNE(state); break;
+	case BPL_REL: BPL(state); break;
+	case BVC_REL: BVC(state); break;
+	case BVS_REL: BVS(state); break;
 	case BIT_ZP: BIT(state, get_byte_zero_page(state)); break;
 	case BIT_ABS: BIT(state, get_byte_absolute(state)); break;
 	case BRK: state->running = 0;

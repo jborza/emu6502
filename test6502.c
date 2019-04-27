@@ -2266,7 +2266,7 @@ void test_BRK() {
 void test_branch(byte opcode, byte n, byte v, byte z, byte c, word expected_pc){
 	State6502 state = create_blank_state();
 	state.flags.n = n;
-	state.flags.v = n;
+	state.flags.v = v;
 	state.flags.z = z;
 	state.flags.c = c;
 	char program[] = { opcode, 0xFE };
@@ -2284,8 +2284,8 @@ void test_branching_multiple() {
 	test_branch(BNE_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 1, /*C*/ 0, /*EXP_PC*/0x02);
 	test_branch(BCC_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
 	test_branch(BCC_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 1, /*EXP_PC*/0x02);
-	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
-	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 1, /*EXP_PC*/0x02);
+	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 1, /*EXP_PC*/0x00);
+	test_branch(BCS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
 	test_branch(BMI_REL, /*N*/ 1, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
 	test_branch(BMI_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
 	test_branch(BPL_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x00);
