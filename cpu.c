@@ -279,6 +279,14 @@ void RTS_(State6502* state) {
 	state->pc = address + 1;
 }
 
+void RTI_(State6502* state) {
+	//interrupt pushes PC first, then status register
+	//RTI should pull status register and program counter from the stack
+	byte sr = pop_byte_from_stack(state);
+	word address = pop_word_from_stack(state);
+	state->pc = address;
+}
+
 void BEQ(State6502* state) {
 	word address = get_address_relative(state);
 	if (state->flags.z)
@@ -325,6 +333,22 @@ void BVC(State6502* state) {
 	word address = get_address_relative(state);
 	if (!state->flags.v)
 		state->pc = address;
+}
+
+void PLA_(State6502* state) {
+	state->a = pop_byte_from_stack(state);
+	set_NZ_flags(state, state->a);
+}
+
+void PLP_(State6502* state) {
+	byte value = pop_byte_from_stack(state);
+	memset(&state->flags, value, sizeof(Flags));
+}
+
+void PHP_(State6502* state) {
+	byte flags_value;
+	memcpy(&flags_value, &state->flags, sizeof(Flags));
+	push_byte_to_stack(state, flags_value);
 }
 
 word pop_word(State6502 * state) {
@@ -377,19 +401,10 @@ int emulate_6502_op(State6502 * state) {
 	case CLV: state->flags.v = 0; break;
 	case NOP: break; //NOP
 	case PHA: push_byte_to_stack(state, state->a); break; //push accumulator to stack
-	case PLA: state->a = pop_byte_from_stack(state); break; //pull accumulator from stack
-	case PHP: {
-		byte flags_value;
-		memcpy(&flags_value, &state->flags, sizeof(Flags));
-		push_byte_to_stack(state, flags_value);
-		break; //push processor status
-	}
-	case PLP: {
-		byte value = pop_byte_from_stack(state);
-		memset(&state->flags, value, 1);
-		break;
-	}//pull procesor status 
-	case RTI: unimplemented_instruction(state); break;
+	case PLA: PLA_(state); break; //pull accumulator from stack
+	case PHP: PHP_(state); break; //push processor status
+	case PLP: PLP_(state); break; //pull procesor status 
+	case RTI: RTI_(state); break;
 	case RTS: RTS_(state); break;
 	case SEC: state->flags.c = 1; break;
 	case SED: state->flags.d = 1; break;
