@@ -47,33 +47,6 @@ void con_set_xy(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void print_row(State6502 * state, int start_address) {
-	DWORD dwCount;
-	byte last_color = 0xff;
-	for (int address = start_address; address < start_address + 32; address++) {
-		if (state->memory[address] != last_color)
-		{
-			con_set_color(0x04, state->memory[address]);
-			last_color = state->memory[address];
-		}
-		//WriteConsoleA()
-
-		WriteConsoleA(hStdOut, " ", 1, &dwCount, NULL);
-		//WriteConsoleOutputCharacterA(hStdOut, "*",1,)
-		//_putch(' ');
-		//		printf(" ");
-	}
-}
-
-void print_mem_slow(State6502 * state) {
-	for (int row = 0; row < 32; row++)
-	{
-		con_set_xy(1, 1 + row);
-		print_row(state, 0x0200 + row * 32);
-	}
-}
-
-
 void print_mem(State6502 * state) {
 	SMALL_RECT console_write_area = { 1, 1, DISP_WIDTH + 1, DISP_HEIGHT + 1 };
 	CHAR_INFO console_buffer[DISP_WIDTH * DISP_HEIGHT];
@@ -106,7 +79,7 @@ void print_stack(State6502 * state) {
 }
 
 byte * read_bin() {
-	FILE* file = fopen("bins\\07.bin", "rb");
+	FILE* file = fopen("bins\\snake_fast.bin", "rb");
 	if (!file) {
 		int err = errno;
 		exit(1);
@@ -131,6 +104,7 @@ void check_keys() {
 
 void print_frame() {
 	con_set_color(0x08, 0x00);
+	//horizontal
 	con_set_xy(0, 0);
 	_putch('/');
 	int y = 0;
@@ -140,10 +114,14 @@ void print_frame() {
 	}
 	_putch('\\');
 	y = 33;
-	for (int x = 0; x < 32; x++) {
+	con_set_xy(0, y);
+	_putch('\\');
+	for (int x = 1; x < 32; x++) {
 		con_set_xy(x, y);
 		_putch('-');
 	}
+	_putch('/');
+	//vertical frame
 	int x = 0;
 	for (int y = 1; y <= 32; y++) {
 		con_set_xy(x, y);
