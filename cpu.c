@@ -30,6 +30,12 @@ void set_NZ_flags(State6502 * state, byte value) {
 	state->flags.n = is_negative(value);
 }
 
+byte flags_as_byte(State6502* state) {
+	byte flags_value;
+	memcpy(&flags_value, &state->flags, sizeof(Flags));
+	return flags_value;
+}
+
 void clear_flags(State6502 * state) {
 	state->flags.b =
 		state->flags.c =

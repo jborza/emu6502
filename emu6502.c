@@ -9,33 +9,46 @@
 #include "disassembler.h"
 #include "opcodes.h"
 #include "test6502.h"
+#include <errno.h>
+#include <direct.h>
 
-byte* read_game() {
-	FILE* file = fopen("..\\bins\\tetris.bin", "r");
-	//byte* buffer = malloc(0x800);
-	byte buffer[32];
-	int read = fread(&buffer, sizeof(byte), 32, file);
+#define NESTEST_SIZE 0x4000
+#define NESTEST_DST 0xC000
+#define MEMORY_SIZE 0xFFFF
+
+byte* read_nestest() {
+	FILE* file = fopen("nestest\\nestest.bin", "rb");
+	if (!file) {
+		int err = errno;
+		exit(1);
+	}
+	byte buffer[NESTEST_SIZE];
+	int read = fread(&buffer, sizeof(byte), NESTEST_SIZE, file);
 	fclose(file);
 	return buffer;
 }
 
-
-
-void emulate_game() {
+void run_nestest() {
 	State6502 state;
-	//FILE* file = fopen("..\\bins\\tetris.bin", "r");
 	clear_state(&state);
-	state.memory = read_game();
-	for (int i = 0; i < 100; i++) {
-		disassemble_6502(state.memory, i);
-	}
+	state.memory = malloc(MEMORY_SIZE);
+	memset(state.memory, 0, MEMORY_SIZE);
+	byte* bin = read_nestest();
+	//const word TARGET = 0xC000;
+	memcpy(state.memory + NESTEST_DST, bin, NESTEST_SIZE);
+	memcpy(state.memory + 0x8000, bin, NESTEST_SIZE);
+	state.pc = NESTEST_DST;
+	do{
+		disassemble_6502(state.memory, state.pc);
+		emulate_6502_op(&state);
+		printf("    A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", state.a, state.x, state.y, flags_as_byte(&state), state.sp);
+	} while (state.flags.b != 1);
 }
 
 int main()
 {
-	//emulate_game();
-	run_tests();
-	printf("All tests succeeded.\n");
+	run_nestest();
+	//run_tests();
 	return 0;
 }
 

@@ -134,7 +134,7 @@ void print_frame() {
 	}
 }
 
-int main(int argc, char* argv[]) {
+int main2(int argc, char* argv[]) {
 	State6502 state;
 	clear_state(&state);
 	state.memory = malloc(MEMORY_SIZE);

@@ -8,3 +8,4 @@ int emulate_6502_op(State6502* state);
 
 void clear_flags(State6502* state);
 void clear_state(State6502* state);
+byte flags_as_byte(State6502* state);

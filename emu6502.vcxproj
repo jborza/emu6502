@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpu.c" />
+    <ClCompile Include="debugger_windows.c" />
     <ClCompile Include="disassembler.c" />
     <ClCompile Include="emu6502.c" />
     <ClCompile Include="memory.c" />

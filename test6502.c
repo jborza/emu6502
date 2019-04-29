@@ -40,6 +40,7 @@ void print_all(State6502 * state) {
 void test_step(State6502 * state) {
 	print_all(state);
 	disassemble_6502(state->memory, state->pc);
+	printf("\n");
 	emulate_6502_op(state);
 	print_all(state);
 }
@@ -48,6 +49,7 @@ void test_step_until_break(State6502 * state) {
 	do {
 		print_all(state);
 		disassemble_6502(state->memory, state->pc);
+		printf("\n");
 		emulate_6502_op(state);
 	} while (state->flags.b != 1);
 	print_all(state);
@@ -1870,6 +1872,7 @@ void test_PHA_PLA() {
 	//act
 	for (int i = 0; i < 9; i++) {
 		disassemble_6502(state.memory, state.pc);
+		printf("\n");
 		emulate_6502_op(&state);
 	}
 

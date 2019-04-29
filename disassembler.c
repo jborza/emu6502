@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 void disassemble_6502(byte* buffer, word pc) {
-	printf("%04X ", pc);
+	printf("%04X  ", pc);
 	byte* code = &buffer[pc];
 	int bytes = 1;
 	char op[128] = "";
@@ -182,7 +182,5 @@ void disassemble_6502(byte* buffer, word pc) {
 	else {
 		printf("   ");
 	}
-	printf(op);
-
-	printf("\n");
+	printf(" %s", op);
 }
