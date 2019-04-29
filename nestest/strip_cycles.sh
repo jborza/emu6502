@@ -1,0 +1,1 @@
+grep -o '^.*SP:..' nestest.log > nestest_strip.log
