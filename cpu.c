@@ -344,6 +344,8 @@ void PLP_(State6502* state) {
 	byte value = pop_byte_from_stack(state);
 	//we don't read the BRK flag
 	value &= ~(1 << 4);
+	//the bit 5 always comes in as true
+	value |= 1 << 5;
 	memset(&state->flags, value, sizeof(Flags));
 }
 
@@ -352,7 +354,6 @@ void PHP_(State6502* state) {
 	memcpy(&flags_value, &state->flags, sizeof(Flags));
 	push_byte_to_stack(state, flags_value);
 }
-
 
 int emulate_6502_op(State6502 * state) {
 	byte* opcode = &state->memory[state->pc++];

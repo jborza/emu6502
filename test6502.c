@@ -1987,7 +1987,33 @@ void test_PLP2() {
 	assert_flag_z(&state, 0);
 	assert_flag_v(&state, 0);
 	assert_flag_n(&state, 0);
-	assert_flag_i(&state, 0);
+	assert_flag_i(&state, 1);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PHA_PLP() {
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_IMM, 0x04, PHA, PLP };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	assertA(&state, 0x04);
+
+	//assert	
+	assert_sp(&state, 0xFF);
+	assert_flag_c(&state, 0);
+	assert_flag_d(&state, 0);
+	assert_flag_b(&state, 0);
+	assert_flag_z(&state, 0);
+	assert_flag_v(&state, 0);
+	assert_flag_n(&state, 0);
+	assert_flag_i(&state, 1);
 
 	//cleanup
 	test_cleanup(&state);
