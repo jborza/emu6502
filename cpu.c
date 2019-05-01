@@ -343,7 +343,7 @@ void PLA_(State6502* state) {
 void PLP_(State6502* state) {
 	byte value = pop_byte_from_stack(state);
 	//we don't read the BRK flag
-	value ^= 1 << 4;
+	value &= ~(1 << 4);
 	memset(&state->flags, value, sizeof(Flags));
 }
 

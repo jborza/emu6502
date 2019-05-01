@@ -1967,6 +1967,32 @@ void test_PLP() {
 	test_cleanup(&state);
 }
 
+void test_PLP2() {
+	State6502 state = create_blank_state();
+	state.sp = 0xfe;
+
+	//arrange
+	char program[] = { PLP };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x1FF] = 0x04; //all flags should be on
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_sp(&state, 0xFF);
+	assert_flag_c(&state, 0);
+	assert_flag_d(&state, 0);
+	assert_flag_b(&state, 0);
+	assert_flag_z(&state, 0);
+	assert_flag_v(&state, 0);
+	assert_flag_n(&state, 0);
+	assert_flag_i(&state, 0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 //// JMP
 
 void test_JMP() {
@@ -2365,7 +2391,7 @@ fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };
-fp* tests_php_plp[] = { test_PHP, test_PLP };
+fp* tests_php_plp[] = { test_PHP, test_PLP, test_PLP2 };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
 fp* tests_sbc[] = { test_SBC_IMM_multiple };
