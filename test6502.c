@@ -1960,6 +1960,23 @@ void test_TXS() {
 	test_cleanup(&state);
 }
 
+void test_TXS_Z() {
+	State6502 state = create_blank_state();
+	//initial state of Z and N = 1
+	state.flags.z = 1;
+	state.flags.n = 1;
+	state.x = 0x00;
+	char program[] = {  TXS };
+	memcpy(state.memory, program, sizeof(program));
+	test_step(&state);
+
+	assert_sp(&state, 0x00);
+	assert_flag_n(&state, 1);
+	assert_flag_z(&state, 1);
+
+	test_cleanup(&state);
+}
+
 void test_TSX() {
 	State6502 state = create_blank_state();
 	state.sp = 0xBB;
@@ -2476,7 +2493,7 @@ fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI
 fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY, test_EOR_IMM_Z };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
-fp* tests_txs_tsx[] = { test_TXS, test_TSX };
+fp* tests_txs_tsx[] = { test_TXS, test_TSX, test_TXS_Z };
 fp* tests_php_plp[] = { test_PHP, test_PLP, test_PLP2 };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };

@@ -411,7 +411,7 @@ int emulate_6502_op(State6502 * state) {
 	case TAY: state->y = state->a; set_NZ_flags(state, state->y); break;
 	case TYA: state->a = state->y; set_NZ_flags(state, state->a);  break;
 	case TSX: state->x = state->sp; set_NZ_flags(state, state->x); break;
-	case TXS: state->sp = state->x; set_NZ_flags(state, state->x); break;
+	case TXS: state->sp = state->x; break;
 	case CMP_IMM: CMP(state, fetch_byte(state)); break; //TODO test
 	case CMP_ZP: CMP(state, get_byte_zero_page(state)); break; //TODO test
 	case CMP_ZPX: CMP(state, get_byte_zero_page_x(state)); break; //TODO test
