@@ -1957,7 +1957,7 @@ void test_PLP() {
 	assert_sp(&state, 0xFF);
 	assert_flag_c(&state, 1);
 	assert_flag_d(&state, 1);
-	assert_flag_b(&state, 1);
+	assert_flag_b(&state, 0);
 	assert_flag_z(&state, 1);
 	assert_flag_v(&state, 1);
 	assert_flag_n(&state, 1);
