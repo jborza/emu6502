@@ -516,6 +516,26 @@ void test_ORA_INDY() {
 	test_cleanup(&state);
 }
 
+void test_ORA_IMM_Z() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { ORA_IMM, 0x00 }; //LDA #$55, AND #$55
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x00);
+	assert_flag_z(&state, 1);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 //// EOR
 
 void test_EOR_IMM() {
@@ -683,6 +703,26 @@ void test_EOR_INDY() {
 	test_cleanup(&state);
 }
 
+
+void test_EOR_IMM_Z() {
+	//initialize
+	State6502 state = create_blank_state();
+	state.a = 0x77;
+
+	//arrange
+	char program[] = { EOR_IMM, 0x77 }; //EOR #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x0);
+	assert_flag_z(&state, 1);
+
+	test_cleanup(&state);
+}
+
 //// AND
 
 void test_AND_IMM() {
@@ -845,6 +885,26 @@ void test_AND_INDY() {
 
 	//assert	
 	assertA(&state, 0xA0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_AND_IMM_Z() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_IMM, 0x55, AND_IMM, 0xAA }; //LDA #$55, AND #$AA
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0x00);
+	assert_flag_z(&state, 1);
 
 	//cleanup
 	test_cleanup(&state);
@@ -2403,8 +2463,8 @@ void test_branching_multiple() {
 
 typedef void fp();
 fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
-fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY };
-fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY };
+fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY, test_ORA_IMM_Z };
+fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY, test_AND_IMM_Z };
 fp* tests_ldx[] = { test_LDX_IMM, test_LDX_IMM_zero, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
 fp* tests_ldy[] = { test_LDY_IMM, test_LDY_IMM_zero, test_LDY_ZP, test_LDY_ZPX, test_LDY_ABS, test_LDY_ABSX };
 fp* tests_stx[] = { test_STX_ZP, test_STX_ZPY, test_STX_ABS };
@@ -2413,7 +2473,7 @@ fp* tests_inx_iny_dex_dey[] = { test_DEX, test_DEX_wraparound, test_DEY, test_DE
 fp* tests_txa_etc[] = { test_TXA, test_TAX, test_TYA, test_TAY };
 fp* tests_inc_dec[] = { test_INC_ZP, test_INC_ZP_multiple, test_INC_ZP_wraparound, test_INC_ZPX, test_INC_ABS, test_INC_ABSX, test_DEC_ZP, test_DEC_ZP_wraparound };
 fp* tests_flags[] = { test_CLC, test_SEC, test_CLD, test_SED, test_SEI, test_CLI, test_CLV };
-fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY };
+fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_EOR_ABSX, test_EOR_ABSY, test_EOR_INDX, test_EOR_INDY, test_EOR_IMM_Z };
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX };

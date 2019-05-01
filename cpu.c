@@ -80,14 +80,14 @@ word pop_word_from_stack(State6502* state) {
 //bitwise or with accumulator
 void ORA(State6502 * state, byte operand) {
 	byte result = state->a | operand;
-	set_NV_flags(state, result);
+	set_NZ_flags(state, result);
 	state->a = result;
 }
 
 //bitwise and with accumulator
 void AND(State6502 * state, byte operand) {
 	byte result = state->a & operand;
-	set_NV_flags(state, result);
+	set_NZ_flags(state, result);
 	state->a = result;
 }
 
@@ -131,7 +131,7 @@ void DEC(State6502 * state, word address) {
 
 void EOR(State6502 * state, byte operand) {
 	state->a = state->a ^ operand;
-	set_NV_flags(state, state->a);
+	set_NZ_flags(state, state->a);
 }
 
 void JMP(State6502 * state, word address) {
