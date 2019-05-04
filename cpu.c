@@ -291,7 +291,12 @@ void RTS_(State6502 * state) {
 void RTI_(State6502 * state) {
 	//interrupt pushes PC first, then status register
 	//RTI should pull status register and program counter from the stack
-	byte sr = pop_byte_from_stack(state);
+	byte value = pop_byte_from_stack(state);
+	//we don't read the BRK flag
+	value &= ~(1 << 4);
+	//the bit 5 always comes in as true
+	value |= 1 << 5;
+	memset(&state->flags, value, sizeof(Flags));
 	word address = pop_word_from_stack(state);
 	state->pc = address;
 }

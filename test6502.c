@@ -1881,7 +1881,7 @@ void test_PHP() {
 	test_cleanup(&state);
 }
 
-void test_PLP_no_flags() {
+void test_PHP_no_flags() {
 	//initialize
 	State6502 state = create_blank_state();
 	//no flags are set
@@ -2360,6 +2360,37 @@ void test_branching_multiple() {
 	test_branch(BVS_REL, /*N*/ 0, /*V*/ 0, /*Z*/ 0, /*C*/ 0, /*EXP_PC*/0x02);
 }
 
+// RTI
+
+void test_RTI() {
+	State6502 state = create_blank_state();
+	state.sp = 0xfc;
+
+	//arrange
+	char program[] = { RTI };
+	memcpy(state.memory, program, sizeof(program));
+	state.memory[0x1FF] = 0x12; //return address 
+	state.memory[0x1FE] = 0x34; //return address 
+	state.memory[0x1FD] = 0x80; //only flag n should be set
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_sp(&state, 0xFF);
+	assert_pc(&state, 0x1234);
+	assert_flag_c(&state, 0);
+	assert_flag_d(&state, 0);
+	assert_flag_b(&state, 0);
+	assert_flag_z(&state, 0);
+	assert_flag_v(&state, 0);
+	assert_flag_n(&state, 1);
+	assert_flag_i(&state, 0);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -2378,7 +2409,7 @@ fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX, test_TXS_Z };
-fp* tests_php_plp[] = { test_PHP, test_PLP_no_flags, test_PLP, test_PLP2 };
+fp* tests_php_plp[] = { test_PHP, test_PHP_no_flags, test_PLP, test_PLP2 };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
 fp* tests_sbc[] = { test_SBC_IMM_multiple };
@@ -2387,6 +2418,7 @@ fp* tests_bit[] = { test_BIT_multiple };
 fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS, test_RTS };
 fp* tests_brk[] = { test_BRK };
 fp* tests_branch[] = { test_branching_multiple };
+fp* tests_rti[] = { test_RTI };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2399,6 +2431,7 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_rti);
 	RUN(tests_branch);
 	RUN(tests_sbc);
 	RUN(tests_brk);
