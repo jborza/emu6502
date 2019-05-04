@@ -156,7 +156,6 @@
     <ClCompile Include="disassembler.c" />
     <ClCompile Include="emu6502.c" />
     <ClCompile Include="memory.c" />
-    <ClCompile Include="test6502.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.h" />

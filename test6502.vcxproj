@@ -131,6 +131,7 @@
     <ClCompile Include="disassembler.c" />
     <ClCompile Include="memory.c" />
     <ClCompile Include="test6502.c" />
+    <ClCompile Include="test_framework.c" />
     <ClCompile Include="test_main.c" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="opcodes.h" />
     <ClInclude Include="state.h" />
     <ClInclude Include="test6502.h" />
+    <ClInclude Include="test_framework.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
