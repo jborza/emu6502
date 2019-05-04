@@ -97,7 +97,7 @@ void assert_sp(State6502 * state, byte expected) {
 
 void assert_pc(State6502 * state, word expected) {
 	if (state->pc != expected) {
-		printf("Unexpected value in SP, expected %02X, was %02X", expected, state->pc);
+		printf("Unexpected value in PC, expected %02X, was %02X", expected, state->pc);
 		exit_or_break();
 	}
 }
