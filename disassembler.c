@@ -32,14 +32,14 @@ char* disassemble_6502_to_string(byte* buffer, word pc) {
 		case ASL_ZPX: sprintf(op, "ASL $%02X,X", code[1]); bytes = 2; break;
 		case ASL_ABS: sprintf(op, "ASL $%02X%02X", code[2], code[1]); bytes = 3; break;
 		case ASL_ABSX: sprintf(op, "ASL $%02X%02X,X", code[2], code[1]); bytes = 3; break;
-		case BCC_REL: sprintf(op, "BCC $%02X", code[1]); bytes = 2; break;
-		case BCS_REL: sprintf(op, "BCS $%02X", code[1]); bytes = 2; break;
-		case BEQ_REL: sprintf(op, "BEQ $%02X", code[1]); bytes = 2; break;
-		case BMI_REL: sprintf(op, "BMI $%02X", code[1]); bytes = 2; break;
-		case BNE_REL: sprintf(op, "BNE $%02X", code[1]); bytes = 2; break;
-		case BPL_REL: sprintf(op, "BPL $%02X", code[1]); bytes = 2; break;
-		case BVC_REL: sprintf(op, "BVC $%02X", code[1]); bytes = 2; break;
-		case BVS_REL: sprintf(op, "BVS $%02X", code[1]); bytes = 2; break;
+		case BCC_REL: sprintf(op, "BCC $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BCS_REL: sprintf(op, "BCS $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BEQ_REL: sprintf(op, "BEQ $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BMI_REL: sprintf(op, "BMI $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BNE_REL: sprintf(op, "BNE $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BPL_REL: sprintf(op, "BPL $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BVC_REL: sprintf(op, "BVC $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
+		case BVS_REL: sprintf(op, "BVS $%04X", pc + 2 + (int8_t)code[1]); bytes = 2; break;
 		case BIT_ZP: sprintf(op, "BIT $%02X", code[1]); bytes = 2; break;
 		case BIT_ABS: sprintf(op, "BIT $%02X%02X", code[2], code[1]); bytes = 3; break;
 		case BRK: sprintf(op, "BRK"); break;
@@ -168,8 +168,11 @@ char* disassemble_6502_to_string(byte* buffer, word pc) {
 			sprintf(op, "UNKNOWN %02x", *code);
 	}
 
-	char arg1[3];
+	char arg1[5];
 	if (bytes > 1) {
+		/*if (op == BCC_REL || op == BEQ_REL || op == BMI_REL || op == BPL_REL || op == BVS_REL || op == BCS_REL || op == BNE_REL || op == BVC_REL) {
+			sprintf(arg1, "%04X", code[1]);
+		}*/
 		sprintf(arg1,"%02X", code[1]);
 	}
 	else {
