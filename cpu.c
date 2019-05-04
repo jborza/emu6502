@@ -30,9 +30,18 @@ void set_NZ_flags(State6502 * state, byte value) {
 	state->flags.n = is_negative(value);
 }
 
-byte flags_as_byte(State6502* state) {
-	byte flags_value;
-	memcpy(&flags_value, &state->flags, sizeof(Flags));
+byte flags_as_byte(State6502 * state) {
+	byte flags_value = 0;
+	flags_value |= state->flags.c << 0;
+	flags_value |= state->flags.z << 1;
+	flags_value |= state->flags.i << 2;
+	flags_value |= state->flags.d << 3;
+	//flag B is active with PHP
+	flags_value |= 1 << 4;
+	//unused bit is active with PHP
+	flags_value |= 1 << 5;
+	flags_value |= state->flags.v << 6;
+	flags_value |= state->flags.n << 7;
 	return flags_value;
 }
 
@@ -52,7 +61,7 @@ void clear_state(State6502 * state) {
 	state->x = 0;
 	state->y = 0;
 	state->pc = 0;
-	state->sp = 0xFF; 
+	state->sp = 0xFF;
 	clear_flags(state);
 	state->running = 1;
 }
@@ -62,7 +71,7 @@ void push_byte_to_stack(State6502 * state, byte value) {
 	state->memory[STACK_HOME + state->sp--] = value;
 }
 
-void push_word_to_stack(State6502* state, word value) {
+void push_word_to_stack(State6502 * state, word value) {
 	push_byte_to_stack(state, (value >> 8) & 0xFF);
 	push_byte_to_stack(state, value & 0xFF);
 }
@@ -71,7 +80,7 @@ byte pop_byte_from_stack(State6502 * state) {
 	return state->memory[STACK_HOME + ++(state->sp)];
 }
 
-word pop_word_from_stack(State6502* state) {
+word pop_word_from_stack(State6502 * state) {
 	byte low = pop_byte_from_stack(state);
 	byte high = pop_byte_from_stack(state);
 	return low + ((word)high << 8);
@@ -274,12 +283,12 @@ void JSR(State6502 * state, word address) {
 	state->pc = address;
 }
 
-void RTS_(State6502* state) {
+void RTS_(State6502 * state) {
 	word address = pop_word_from_stack(state);
 	state->pc = address + 1;
 }
 
-void RTI_(State6502* state) {
+void RTI_(State6502 * state) {
 	//interrupt pushes PC first, then status register
 	//RTI should pull status register and program counter from the stack
 	byte sr = pop_byte_from_stack(state);
@@ -287,60 +296,60 @@ void RTI_(State6502* state) {
 	state->pc = address;
 }
 
-void BEQ(State6502* state) {
+void BEQ(State6502 * state) {
 	word address = get_address_relative(state);
 	if (state->flags.z)
 		state->pc = address;
 }
 
-void BNE(State6502* state) {
+void BNE(State6502 * state) {
 	word address = get_address_relative(state);
 	if (!state->flags.z)
 		state->pc = address;
 }
 
-void BCC(State6502* state) {
+void BCC(State6502 * state) {
 	word address = get_address_relative(state);
 	if (!state->flags.c)
 		state->pc = address;
 }
 
-void BCS(State6502* state) {
+void BCS(State6502 * state) {
 	word address = get_address_relative(state);
 	if (state->flags.c)
 		state->pc = address;
 }
 
-void BMI(State6502* state) {
+void BMI(State6502 * state) {
 	word address = get_address_relative(state);
 	if (state->flags.n)
 		state->pc = address;
 }
 
-void BPL(State6502* state) {
+void BPL(State6502 * state) {
 	word address = get_address_relative(state);
 	if (!state->flags.n)
 		state->pc = address;
 }
 
-void BVS(State6502* state) {
+void BVS(State6502 * state) {
 	word address = get_address_relative(state);
 	if (state->flags.v)
 		state->pc = address;
 }
 
-void BVC(State6502* state) {
+void BVC(State6502 * state) {
 	word address = get_address_relative(state);
 	if (!state->flags.v)
 		state->pc = address;
 }
 
-void PLA_(State6502* state) {
+void PLA_(State6502 * state) {
 	state->a = pop_byte_from_stack(state);
 	set_NZ_flags(state, state->a);
 }
 
-void PLP_(State6502* state) {
+void PLP_(State6502 * state) {
 	byte value = pop_byte_from_stack(state);
 	//we don't read the BRK flag
 	value &= ~(1 << 4);
@@ -349,9 +358,8 @@ void PLP_(State6502* state) {
 	memset(&state->flags, value, sizeof(Flags));
 }
 
-void PHP_(State6502* state) {
-	byte flags_value;
-	memcpy(&flags_value, &state->flags, sizeof(Flags));
+void PHP_(State6502 * state) {
+	byte flags_value = flags_as_byte(state);
 	push_byte_to_stack(state, flags_value);
 }
 

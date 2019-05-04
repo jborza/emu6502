@@ -2001,7 +2001,6 @@ void test_PHP() {
 	state.flags.d = 1;
 	state.flags.i = 1;
 	state.flags.v = 1;
-	state.sp = 0xFF;
 
 	//arrange
 	char program[] = { PHP };
@@ -2013,6 +2012,27 @@ void test_PHP() {
 	//assert	
 	assert_sp(&state, 0xFE);
 	assert_memory(&state, 0x1FF, 0xFF);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_PLP_no_flags() {
+	//initialize
+	State6502 state = create_blank_state();
+	//no flags are set
+
+	//arrange
+	char program[] = { PHP };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assert_sp(&state, 0xFE);
+	byte expected_value = (1 << 4) | (1 << 5);
+	assert_memory(&state, 0x1FF, expected_value);
 
 	//cleanup
 	test_cleanup(&state);
@@ -2051,7 +2071,7 @@ void test_PLP2() {
 	//arrange
 	char program[] = { PLP };
 	memcpy(state.memory, program, sizeof(program));
-	state.memory[0x1FF] = 0x04; //all flags should be on
+	state.memory[0x1FF] = 0x04; //only flag i should be set
 
 	//act
 	test_step(&state);
@@ -2494,7 +2514,7 @@ fp* tests_eor[] = { test_EOR_IMM, test_EOR_ZP, test_EOR_ZPX, test_EOR_ABS, test_
 fp* tests_sta[] = { test_STA_ZP, test_STA_ZPX, test_STA_ABS, test_STA_ABSX, test_STA_ABSY, test_STA_INDX, test_STA_INDY };
 fp* tests_pha_pla[] = { test_PHA, test_PLA, test_PLA_N, test_PLA_Z, test_PHA_PLA };
 fp* tests_txs_tsx[] = { test_TXS, test_TSX, test_TXS_Z };
-fp* tests_php_plp[] = { test_PHP, test_PLP, test_PLP2 };
+fp* tests_php_plp[] = { test_PHP, test_PLP_no_flags, test_PLP, test_PLP2 };
 fp* tests_jmp[] = { test_JMP, test_JMP_IND, test_JMP_IND_wrap };
 fp* tests_cmp[] = { test_CMP_ABS_equal, test_CMP_ABS_greater, test_CMP_ABS_greater_2, test_CMP_ABS_less_than, test_CPX_ABS, test_CPY_ABS };
 fp* tests_sbc[] = { test_SBC_IMM_multiple };

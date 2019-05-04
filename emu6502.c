@@ -22,10 +22,16 @@ byte* read_nestest() {
 		int err = errno;
 		exit(1);
 	}
-	byte buffer[NESTEST_SIZE];
+	static byte buffer[NESTEST_SIZE];
 	int read = fread(&buffer, sizeof(byte), NESTEST_SIZE, file);
 	fclose(file);
 	return buffer;
+}
+
+byte debug_flags_as_byte(State6502* state) {
+	byte flags_value = 0;
+	memcpy(&flags_value, &state->flags, sizeof(Flags));
+	return flags_value;
 }
 
 void run_nestest() {
@@ -38,16 +44,19 @@ void run_nestest() {
 	memcpy(state.memory + NESTEST_DST, bin, NESTEST_SIZE);
 	memcpy(state.memory + 0x8000, bin, NESTEST_SIZE);
 	state.pc = NESTEST_DST;
+	//a little cheat to simulate probably a JSR and SEI at the beginning 
+	state.sp = 0xfd;
+	state.flags.i = 1;
 	do{
 		char* dasm = disassemble_6502_to_string(state.memory, state.pc);
-		printf("%-50s  A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", dasm, state.a, state.x, state.y, flags_as_byte(&state), state.sp);
+		printf("%-50s  A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", dasm, state.a, state.x, state.y, debug_flags_as_byte(&state), state.sp);
 		emulate_6502_op(&state);
 	} while (state.flags.b != 1);
 }
 
 int main()
 {
-	//run_nestest();
-	run_tests();
+	run_nestest();
+	//run_tests();
 	return 0;
 }
