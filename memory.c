@@ -12,7 +12,13 @@ word fetch_word(State6502* state) {
 }
 
 word read_word(State6502* state, word address) {
-	return state->memory[address] | state->memory[address + 1] << 8;
+	if ((address & 0xFF) == 0xFF)
+	{
+		return state->memory[address] | state->memory[address - 0xFF] << 8;
+	}
+	else {
+		return state->memory[address] | state->memory[address + 1] << 8;
+	}
 }
 
 word get_address_zero_page(State6502* state) {
