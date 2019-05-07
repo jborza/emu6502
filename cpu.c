@@ -208,9 +208,10 @@ void CPY(State6502 * state, byte operand) {
 	cmp_internal(state, state->y, operand);
 }
 
+//Aritmetic Shift Left
 byte asl(State6502 * state, byte operand) {
 	byte result = operand << 1;
-	state->flags.c = operand > 0x80;
+	state->flags.c = (operand & 0x80) == 0x80;
 	set_NZ_flags(state, result);
 	return result;
 }

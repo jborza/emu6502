@@ -2391,6 +2391,37 @@ void test_RTI() {
 	test_cleanup(&state);
 }
 
+// ASL
+
+void test_ASL_ACC(byte a, byte expected_a, byte expected_c) {
+	State6502 state = create_blank_state();
+	state.a = a;
+
+	//arrange
+	char program[] = { ASL_ACC };
+	memcpy(state.memory, program, sizeof(program));
+	
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, expected_a);
+	assert_flag_c(&state, expected_c);
+	
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_asl_multiple() {
+	test_ASL_ACC(/* A */ 0x0, /* Result*/ 0x0, /* C */ 0);
+	test_ASL_ACC(/* A */ 0x1, /* Result*/ 0x2, /* C */ 0);
+	test_ASL_ACC(/* A */ 0x1F, /* Result*/ 0x3E, /* C */ 0);
+	test_ASL_ACC(/* A */ 0x7F, /* Result*/ 0xFE, /* C */ 0);
+	test_ASL_ACC(/* A */ 0x80, /* Result*/ 0x0, /* C */ 1);
+	test_ASL_ACC(/* A */ 0x81, /* Result*/ 0x2, /* C */ 1);
+	test_ASL_ACC(/* A */ 0xFF, /* Result*/ 0xFE, /* C */ 1);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -2419,6 +2450,7 @@ fp* tests_jsr_rts[] = { test_JSR, test_JSR_RTS, test_RTS };
 fp* tests_brk[] = { test_BRK };
 fp* tests_branch[] = { test_branching_multiple };
 fp* tests_rti[] = { test_RTI };
+fp* tests_asl[] = { test_asl_multiple };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2431,6 +2463,7 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_asl);
 	RUN(tests_rti);
 	RUN(tests_branch);
 	RUN(tests_sbc);
