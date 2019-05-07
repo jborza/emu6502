@@ -128,8 +128,8 @@
 #define ROR_ACC 0x6a
 #define ROR_ZP 0x66
 #define ROR_ZPX 0x76
-#define ROR_ABS 0x7e
-#define ROR_ABSX 0x6e
+#define ROR_ABS 0x6e
+#define ROR_ABSX 0x7e
 #define SBC_IMM 0xe9
 #define SBC_ZP 0xe5
 #define SBC_ZPX 0xf5
