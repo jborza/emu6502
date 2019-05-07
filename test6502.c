@@ -39,7 +39,7 @@ void test_LDA_IMM_zero() {
 	State6502 state = create_blank_state();
 
 	//arrange
-	char program[] = { LDA_IMM, 0x00 }; 
+	char program[] = { LDA_IMM, 0x00 };
 	memcpy(state.memory, program, sizeof(program));
 
 	//act
@@ -186,6 +186,31 @@ void test_LDA_INDX() {
 
 	//assert	
 	assertA(&state, 0xAA);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_LDA_INDX_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_INDX, 0xFF }; //LDA ($FF, x)
+	memcpy(state.memory + 0x200, program, sizeof(program));
+	//$FF+0 -> $FF
+	//value at $FF is $00, continuing at $00 with 04 -> $0400
+	state.memory[0x00FF] = 0x00;
+	state.memory[0x0000] = 0x04;
+	state.memory[0x0100] = 0x33; //fake unwanted value
+	state.memory[0x0400] = 0xEE; //correct final value
+	state.pc = 0x200;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xEE);
 
 	//cleanup
 	test_cleanup(&state);
@@ -1830,7 +1855,7 @@ void test_TXS_Z() {
 	state.flags.z = 1;
 	state.flags.n = 1;
 	state.x = 0x00;
-	char program[] = {  TXS };
+	char program[] = { TXS };
 	memcpy(state.memory, program, sizeof(program));
 	test_step(&state);
 
@@ -2327,7 +2352,7 @@ void test_BRK() {
 
 //BEQ, BCC, ...
 
-void test_branch(byte opcode, byte n, byte v, byte z, byte c, word expected_pc){
+void test_branch(byte opcode, byte n, byte v, byte z, byte c, word expected_pc) {
 	State6502 state = create_blank_state();
 	state.flags.n = n;
 	state.flags.v = v;
@@ -2400,14 +2425,14 @@ void test_ASL_ACC(byte a, byte expected_a, byte expected_c) {
 	//arrange
 	char program[] = { ASL_ACC };
 	memcpy(state.memory, program, sizeof(program));
-	
+
 	//act
 	test_step(&state);
 
 	//assert	
 	assertA(&state, expected_a);
 	assert_flag_c(&state, expected_c);
-	
+
 	//cleanup
 	test_cleanup(&state);
 }
@@ -2469,7 +2494,7 @@ void test_ror_multiple() {
 /////////////////////
 
 typedef void fp();
-fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY };
+fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY, test_LDA_INDX_wraparound };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY, test_ORA_IMM_Z };
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY, test_AND_IMM_Z };
 fp* tests_ldx[] = { test_LDX_IMM, test_LDX_IMM_zero, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
@@ -2508,6 +2533,7 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	test_LDA_INDX_wraparound();
 	RUN(tests_ror);
 	RUN(tests_asl);
 	RUN(tests_rti);
