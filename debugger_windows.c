@@ -89,7 +89,7 @@ byte * read_bin() {
 	rewind(file);
 
 	byte* buffer = malloc(glob_file_size);
-	int read = fread(buffer, sizeof(byte), glob_file_size, file);
+	size_t read = fread(buffer, sizeof(byte), glob_file_size, file);
 	fclose(file);
 	return buffer;
 }
@@ -134,7 +134,7 @@ void print_frame() {
 	}
 }
 
-int main2(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 	State6502 state;
 	clear_state(&state);
 	state.memory = malloc(MEMORY_SIZE);

@@ -1,6 +1,3 @@
-// emu6502.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -8,8 +5,6 @@
 #include "cpu.h"
 #include "disassembler.h"
 #include "opcodes.h"
-#include "test6502.h"
-#include <errno.h>
 #include <direct.h>
 
 #define NESTEST_SIZE 0x4000
@@ -19,7 +14,6 @@
 byte* read_nestest() {
 	FILE* file = fopen("nestest/nestest.bin", "rb");
 	if (!file) {
-		int err = errno;
 		printf("Couldn't load nestest.bin!");
 		exit(1);
 	}
@@ -48,7 +42,7 @@ void run_nestest() {
 	//a little cheat to simulate probably a JSR and SEI at the beginning 
 	state.sp = 0xfd;
 	state.flags.i = 1;
-	do{
+	do {
 		char* dasm = disassemble_6502_to_string(state.memory, state.pc);
 		printf("%-50s  A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", dasm, state.a, state.x, state.y, debug_flags_as_byte(&state), state.sp);
 		emulate_6502_op(&state);
@@ -58,6 +52,5 @@ void run_nestest() {
 int main()
 {
 	run_nestest();
-	//run_tests();
 	return 0;
 }

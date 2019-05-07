@@ -58,3 +58,4 @@ dkms.conf
 /emu6502.vcxproj.filters
 /data/.vscode/ipch
 /x64/
+/nestest.vcxproj.user
