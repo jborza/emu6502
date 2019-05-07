@@ -2422,6 +2422,50 @@ void test_asl_multiple() {
 	test_ASL_ACC(/* A */ 0xFF, /* Result*/ 0xFE, /* C */ 1);
 }
 
+// ROR
+
+void test_ROR_ACC(byte a, byte c, byte expected_a, byte expected_c, byte expected_n, byte expected_z) {
+	State6502 state = create_blank_state();
+	state.a = a;
+	state.flags.c = c;
+
+	//arrange
+	char program[] = { ROR_ACC };
+	memcpy(state.memory, program, sizeof(program));
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, expected_a);
+	assert_flag_c(&state, expected_c);
+	assert_flag_n(&state, expected_n);
+	assert_flag_z(&state, expected_z);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
+void test_ror_multiple() {
+	test_ROR_ACC(/*A*/ 0x00, /*C*/ 0, /* Result */ 0x00, /* C */ 0, /* N */ 0, /*Z*/ 1);
+	test_ROR_ACC(/*A*/ 0x01, /*C*/ 0, /* Result */ 0x00, /* C */ 1, /* N */ 0, /*Z*/ 1);
+	test_ROR_ACC(/*A*/ 0x02, /*C*/ 0, /* Result */ 0x01, /* C */ 0, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x40, /*C*/ 0, /* Result */ 0x20, /* C */ 0, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x80, /*C*/ 0, /* Result */ 0x40, /* C */ 0, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x81, /*C*/ 0, /* Result */ 0x40, /* C */ 1, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0xC0, /*C*/ 0, /* Result */ 0x60, /* C */ 0, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0xFE, /*C*/ 0, /* Result */ 0x7F, /* C */ 0, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0xFF, /*C*/ 0, /* Result */ 0x7F, /* C */ 1, /* N */ 0, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x00, /*C*/ 1, /* Result */ 0x80, /* C */ 0, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x01, /*C*/ 1, /* Result */ 0x80, /* C */ 1, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x02, /*C*/ 1, /* Result */ 0x81, /* C */ 0, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x40, /*C*/ 1, /* Result */ 0xA0, /* C */ 0, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x80, /*C*/ 1, /* Result */ 0xC0, /* C */ 0, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0x81, /*C*/ 1, /* Result */ 0xC0, /* C */ 1, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0xC0, /*C*/ 1, /* Result */ 0xE0, /* C */ 0, /* N */ 1, /*Z*/ 0);
+	test_ROR_ACC(/*A*/ 0xFF, /*C*/ 1, /* Result */ 0xFF, /* C */ 1, /* N */ 1, /*Z*/ 0);
+}
+
 /////////////////////
 
 typedef void fp();
@@ -2451,6 +2495,7 @@ fp* tests_brk[] = { test_BRK };
 fp* tests_branch[] = { test_branching_multiple };
 fp* tests_rti[] = { test_RTI };
 fp* tests_asl[] = { test_asl_multiple };
+fp* tests_ror[] = { test_ror_multiple };
 
 #define RUN(suite) run_suite(suite, sizeof(suite)/sizeof(fp*))
 
@@ -2463,6 +2508,7 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
+	RUN(tests_ror);
 	RUN(tests_asl);
 	RUN(tests_rti);
 	RUN(tests_branch);

@@ -260,15 +260,14 @@ void ROL_MEM(State6502 * state, word address) {
 }
 
 byte ror(State6502 * state, byte operand) {
-	word result_word = (operand >> 1) | (state->flags.c << 7);
-	state->flags.c = (result_word & 0x01) != 0;
-	byte result = result_word & 0xFF;
+	byte result = (operand >> 1) | (state->flags.c << 7);
+	state->flags.c = (operand & 0x01) != 0;
 	set_NZ_flags(state, result);
 	return result;
 }
 
 void ROR_A(State6502 * state) {
-	state->a = rol(state, state->a);
+	state->a = ror(state, state->a);
 }
 
 void ROR_MEM(State6502 * state, word address) {
