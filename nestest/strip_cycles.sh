@@ -1,1 +1,1 @@
-grep -o '^.*SP:..' nestest.log > nestest_strip.log
+cat nestest.log | sed 's/=.*A:/ A:/' | sed 's/@.*A:/ A:/' | grep -o '^.*SP:..' > nestest_strip2.log
