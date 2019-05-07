@@ -109,7 +109,7 @@ word get_address_indirect_y(State6502 * state) {
 	//zero-page address as an argument
 	byte indirect_address = fetch_byte(state);
 	//the address and the following byte is read as a word, adding Y register
-	word address = read_word(state, indirect_address) + state->y;
+	word address = read_word_wrap(state, indirect_address) + state->y;
 	return address;
 }
 

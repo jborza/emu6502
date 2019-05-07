@@ -238,6 +238,31 @@ void test_LDA_INDY() {
 	test_cleanup(&state);
 }
 
+void test_LDA_INDY_wraparound() {
+	//initialize
+	State6502 state = create_blank_state();
+
+	//arrange
+	char program[] = { LDA_INDY, 0xFF }; //LDA ($FF), y
+	memcpy(state.memory + 0x200, program, sizeof(program));
+	//$FF+0 -> $FF
+	//value at $FF is $00, continuing at $00 with 04 -> $0400
+	state.memory[0x00FF] = 0x00;
+	state.memory[0x0000] = 0x04;
+	state.memory[0x0100] = 0x33; //fake unwanted value
+	state.memory[0x0400] = 0xEE; //correct final value
+	state.pc = 0x200;
+
+	//act
+	test_step(&state);
+
+	//assert	
+	assertA(&state, 0xEE);
+
+	//cleanup
+	test_cleanup(&state);
+}
+
 //// ORA
 
 void test_ORA_IMM() {
@@ -2494,7 +2519,7 @@ void test_ror_multiple() {
 /////////////////////
 
 typedef void fp();
-fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY, test_LDA_INDX_wraparound };
+fp* tests_lda[] = { test_LDA_IMM, test_LDA_IMM_zero, test_LDA_ZP, test_LDA_ZPX, test_LDA_ZPX_wraparound, test_LDA_ABS, test_LDA_ABSX, test_LDA_ABSY, test_LDA_INDX, test_LDA_INDY, test_LDA_INDX_wraparound, test_LDA_INDY_wraparound };
 fp* tests_ora[] = { test_ORA_IMM, test_ORA_ZP, test_ORA_ZPX, test_ORA_ABS, test_ORA_ABSX, test_ORA_ABSY, test_ORA_INDX, test_ORA_INDY, test_ORA_IMM_Z };
 fp* tests_and[] = { test_AND_IMM, test_AND_ZP, test_AND_ZPX, test_AND_ABS, test_AND_ABSX, test_AND_ABSY, test_AND_INDX, test_AND_INDY, test_AND_IMM_Z };
 fp* tests_ldx[] = { test_LDX_IMM, test_LDX_IMM_zero, test_LDX_ZP, test_LDX_ZPY, test_LDX_ABS, test_LDX_ABSY };
