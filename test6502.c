@@ -2533,7 +2533,6 @@ void run_suite(fp * *suite, int size) {
 }
 
 void run_tests() {
-	test_LDA_INDX_wraparound();
 	RUN(tests_ror);
 	RUN(tests_asl);
 	RUN(tests_rti);

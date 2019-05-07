@@ -7,6 +7,8 @@ word fetch_word(State6502* state);
 
 word read_word(State6502* state, word address);
 
+word read_word_wrap(State6502* state, word address);
+
 word get_address_zero_page(State6502* state);
 
 byte get_byte_zero_page(State6502* state);
